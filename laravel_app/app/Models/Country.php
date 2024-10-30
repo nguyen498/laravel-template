@@ -31,4 +31,9 @@ class Country extends Model
             'countries.name' => 10
         ]
     ];
+
+    public function searchText($term)
+    {
+        return self::search($term);
+    }
 }

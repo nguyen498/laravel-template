@@ -97,6 +97,11 @@ class User extends Authenticatable
         ];
     }
 
+    public function searchText($term)
+    {
+        return self::search($term);
+    }
+
 
 //    public function searchableUsing(): Engine
 //    {

@@ -81,6 +81,19 @@ class Post extends Model
         // Add other casts as needed
     ];
 
+    protected $searchable = [
+        'column' => [
+            'posts.reference' => 10,
+            'posts.title' => 10,
+            'posts.description' => 10
+        ]
+    ];
+
+    public function searchText($term)
+    {
+        return self::search($term);
+    }
+
     /**
      * Relationship to User
      */

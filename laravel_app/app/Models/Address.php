@@ -51,6 +51,11 @@ class Address extends Model
         ]
     ];
 
+    public function searchText($term)
+    {
+        return self::search($term);
+    }
+
     /**
      * Get the parent addressable model (if polymorphic).
      */

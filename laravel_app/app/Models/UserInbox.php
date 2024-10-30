@@ -52,4 +52,9 @@ class UserInbox extends Model
             'user_inboxes.content' => 10,
         ],
     ];
+
+    public function searchText($term)
+    {
+        return self::search($term);
+    }
 }

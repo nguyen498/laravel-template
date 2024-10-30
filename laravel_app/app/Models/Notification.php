@@ -52,4 +52,9 @@ class Notification extends Model
             'notifications.content' => 10,
         ],
     ];
+
+    public function searchText($term)
+    {
+        return self::search($term);
+    }
 }

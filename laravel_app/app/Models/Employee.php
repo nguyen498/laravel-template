@@ -44,10 +44,15 @@ class Employee extends Model implements LaratrustUser
 
     protected $searchable = [
         'column' => [
-            'username' => 10,
-            'fullname' => 10,
-            'email' => 10,
-            'phone' => 10,
+            'employees.username' => 10,
+            'employees.fullname' => 10,
+            'employees.email' => 10,
+            'employees.phone' => 10,
         ]
     ];
+
+    public function searchText($term)
+    {
+        return self::search($term);
+    }
 }
