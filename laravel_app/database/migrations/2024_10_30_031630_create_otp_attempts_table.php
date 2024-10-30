@@ -23,6 +23,8 @@ return new class extends Migration
             $table->tinyInteger('attempts')->default(0); // Max 5
             $table->string('device_id', 50)->nullable();
             $table->timestamps();
+
+            $table->index('device_id');
         });
     }
 

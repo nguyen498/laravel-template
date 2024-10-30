@@ -5,12 +5,13 @@ namespace App\Models;
 use App\Traits\UuidTrait;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
-class SubCategory extends Model
+class PostIndustry extends Model
 {
-    use HasFactory, UuidTrait;
+    use HasFactory, SoftDeletes, UuidTrait;
 
-    protected $table = 'sub_categories';
+    protected $table = 'post_industries';
 
     protected $primaryKey = 'id';
     public $incrementing = false; // No auto-increment for UUID
@@ -18,10 +19,10 @@ class SubCategory extends Model
 
     protected $fillable = [
         'id',
-        'category_id',
+        'sub_category_id',
+        'reference',
         'name',
         'description',
-        'logo',
         'status',
     ];
 
@@ -33,15 +34,10 @@ class SubCategory extends Model
     ];
 
     /**
-     * Relationship to Category
+     * Relationship to SubCategory
      */
-    public function category()
+    public function subCategory()
     {
-        return $this->belongsTo(Category::class);
-    }
-
-    public function postIndustry()
-    {
-        return $this->hasMany(PostIndustry::class);
+        return $this->belongsTo(SubCategory::class);
     }
 }

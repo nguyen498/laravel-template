@@ -23,6 +23,8 @@ return new class extends Migration
             $table->uuid('mediaable_id')->nullable(); // ID for polymorphic relation
             $table->string('mediaable_type', 200)->nullable(); // Type for polymorphic relation
             $table->timestamps(); // Created at and updated at timestamps
+
+            $table->index(['mediaable_id', 'mediaable_type']);
         });
     }
 

@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::create('employees', function (Blueprint $table) {
             $table->uuid('id')->primary(); // UUID as primary key
+            $table->string('reference', 100)->unique(); // Unique username
             $table->string('username', 100)->unique(); // Unique username
             $table->string('password', 120); // Password for authentication
             $table->string('fullname', 100); // Full name of the employee

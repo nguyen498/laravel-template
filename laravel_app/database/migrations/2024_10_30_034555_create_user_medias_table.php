@@ -20,6 +20,8 @@ return new class extends Migration
             $table->tinyInteger('type')->nullable(); // Type: video or image
             $table->softDeletes(); // deleted_at timestamp for soft delete
             $table->timestamps();
+
+            $table->index('user_id');
         });
     }
 

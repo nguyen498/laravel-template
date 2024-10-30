@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Traits\UuidTrait;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -11,7 +12,7 @@ use Nicolaslopezj\Searchable\SearchableTrait;
 
 class Employee extends Model implements LaratrustUser
 {
-    use HasFactory, SoftDeletes, SearchableTrait, HasRolesAndPermissions;
+    use HasFactory, SoftDeletes, SearchableTrait, HasRolesAndPermissions, UuidTrait;
 
     protected $table = 'employees';
 

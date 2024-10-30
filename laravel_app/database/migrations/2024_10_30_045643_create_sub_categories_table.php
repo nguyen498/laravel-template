@@ -19,6 +19,8 @@ return new class extends Migration
             $table->string('logo', 255)->nullable(); // Logo link for sub category
             $table->tinyInteger('status')->default(1); // Status of the sub category
             $table->timestamps(); // Created at and updated at timestamps
+
+            $table->index('category_id');
         });
     }
 

@@ -19,6 +19,8 @@ return new class extends Migration
             $table->integer('sort')->default(0); // Sorting order
             $table->tinyInteger('status')->default(1); // Status of the state
             $table->timestamps();
+
+            $table->index('country_id');
         });
     }
 

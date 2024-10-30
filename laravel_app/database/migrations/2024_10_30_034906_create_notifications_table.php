@@ -29,6 +29,8 @@ return new class extends Migration
             $table->string('created_name', 100)->nullable();
             $table->softDeletes(); // deleted_at timestamp for soft delete
             $table->timestamps();
+
+            $table->index(['notification_id', 'notification_type']);
         });
     }
 

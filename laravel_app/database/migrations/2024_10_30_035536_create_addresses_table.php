@@ -31,6 +31,8 @@ return new class extends Migration
 
             // Optional index for polymorphic relations
             $table->index(['addressable_id', 'addressable_type']);
+            $table->index('state_id');
+            $table->index('country_id');
         });
     }
 
