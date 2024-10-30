@@ -18,6 +18,7 @@
         "meilisearch/meilisearch-php": "^1.10",
         "nicolaslopezj/searchable": "^1.13",
         "predis/predis": "^2.2",
+        "santigarcor/laratrust": "^8.3",
         "tightenco/ziggy": "^2.0"
     },
     "require-dev": {

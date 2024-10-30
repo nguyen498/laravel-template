@@ -139,6 +139,8 @@
       <excludeFolder url="file://$MODULE_DIR$/laravel_app/vendor/symfony/polyfill-mbstring" />
       <excludeFolder url="file://$MODULE_DIR$/laravel_app/vendor/ramsey/collection" />
       <excludeFolder url="file://$MODULE_DIR$/laravel_app/vendor/ramsey/uuid" />
+      <excludeFolder url="file://$MODULE_DIR$/laravel_app/vendor/santigarcor/laratrust" />
+      <excludeFolder url="file://$MODULE_DIR$/laravel_app/vendor/kkszymanowski/traitor" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />

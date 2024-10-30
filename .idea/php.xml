@@ -133,6 +133,8 @@
       <path value="$PROJECT_DIR$/laravel_app/vendor/symfony/polyfill-mbstring" />
       <path value="$PROJECT_DIR$/laravel_app/vendor/ramsey/collection" />
       <path value="$PROJECT_DIR$/laravel_app/vendor/ramsey/uuid" />
+      <path value="$PROJECT_DIR$/laravel_app/vendor/santigarcor/laratrust" />
+      <path value="$PROJECT_DIR$/laravel_app/vendor/kkszymanowski/traitor" />
     </include_path>
   </component>
   <component name="PhpProjectSharedConfiguration" php_language_level="8.0">
