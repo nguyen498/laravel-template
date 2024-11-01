@@ -38,7 +38,7 @@ class UsersController extends Controller
 
     public function store(UserStoreRequest $request): RedirectResponse
     {
-        $user = Auth::user()->account->users()->create(
+        $user = User::query()->create(
             $request->validated()
         );
 

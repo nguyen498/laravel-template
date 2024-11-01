@@ -9,15 +9,15 @@ export default () => {
 
   return (
     <div className="flex items-center justify-between w-full p-4 text-sm bg-white border-b md:py-0 md:px-12 d:text-md">
-      <div className="mt-1 mr-4">{auth.user.first_name}</div>
+      <div className="mt-1 mr-4"></div>
       <div className="relative">
         <div
           className="flex items-center cursor-pointer select-none group"
           onClick={() => setMenuOpened(true)}
         >
           <div className="mr-1 text-gray-800 whitespace-nowrap group-hover:text-indigo-600 focus:text-indigo-600">
-            <span>{auth.user.first_name}</span>
-            <span className="hidden ml-1 md:inline">{auth.user.last_name}</span>
+            <span>{auth.user.fullname}</span>
+            {/* <span className="hidden ml-1 md:inline">{auth.user.last_name}</span> */}
           </div>
           <ChevronDown
             size={20}
