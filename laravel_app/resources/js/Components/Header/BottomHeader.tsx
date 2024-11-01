@@ -26,13 +26,13 @@ export default () => {
         </div>
         <div className={menuOpened ? '' : 'hidden'}>
           <div className="absolute top-0 right-0 left-auto z-20 py-2 mt-8 text-sm whitespace-nowrap bg-white rounded shadow-xl">
-            <Link
+            {/* <Link
               href={route('users.edit', auth.user.id)}
               className="block px-6 py-2 hover:bg-indigo-600 hover:text-white"
               onClick={() => setMenuOpened(false)}
             >
               My Profile
-            </Link>
+            </Link> */}
             <Link
               href={route('users')}
               className="block px-6 py-2 hover:bg-indigo-600 hover:text-white"
