@@ -38,6 +38,7 @@ class Employee extends Authenticatable implements LaratrustUser
         'description',
         'type',
         'status',
+        'last_login'
     ];
 
     /**
@@ -49,6 +50,7 @@ class Employee extends Authenticatable implements LaratrustUser
         'fullname' => 'string',
         'email' => 'string',
         'phone' => 'string',
+        'last_login' => 'datetime',
         'description' => 'string',
     ];
 
