@@ -2,17 +2,22 @@
 
 namespace App\Models;
 
+use App\Traits\UuidTrait;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Hash;
-use Laravel\Sanctum\HasApiTokens;
+use Nicolaslopezj\Searchable\SearchableTrait;
 
 class User extends Authenticatable
 {
-    use HasApiTokens, HasFactory, Notifiable, SoftDeletes;
+    use HasFactory, Notifiable, SearchableTrait, SoftDeletes, UuidTrait, \Laravel\Passport\HasApiTokens;
+    public $table = "users";
+    public $primaryKey = "id";
+    public $incrementing = false;
+    protected $keyType = "string";
 
     /**
      * The attributes that are mass assignable.
@@ -20,12 +25,18 @@ class User extends Authenticatable
      * @var array<int, string>
      */
     protected $fillable = [
-        'name',
-        'first_name',
-        'last_name',
-        'email',
-        'password',
-        'photo',
+        "email",
+        "password",
+        "reference",
+        "first_name",
+        "last_name",
+        "phone",
+        "description",
+        "last_login",
+        "type",
+        "status",
+        'cover',
+        'medias'
     ];
 
     /**
@@ -43,12 +54,72 @@ class User extends Authenticatable
      *
      * @return array<string, string>
      */
+    protected $searchable = [
+        "columns" => [
+            "users.name" => 10,
+            "users.first_name" => 10,
+            "users.last_name" => 10,
+            "users.email" => 10,
+        ],
+    ];
+
     protected function casts(): array
     {
         return [
-            'owner' => 'boolean',
-            'email_verified_at' => 'datetime',
+            "email_verified_at" => "datetime",
+            "password" => "hashed",
+            "reference" => "string",
+            "first_name" => "string",
+            "last_name" => "string",
+            "phone" => "string",
+            "description" => "string",
+            "last_login" => "datetime",
+            "type" => "integer",
+            "status" => "integer",
+            'cover' => 'string',
+            'medias' => 'string'
         ];
+    }
+
+    public function searchText($term)
+    {
+        return self::search($term);
+    }
+
+    public function userActionPosts()
+    {
+        return $this->hasMany(UserActionPost::class);
+    }
+
+    public function userComments()
+    {
+        return $this->hasMany(UserComment::class);
+    }
+
+    public function userRecentSearchs()
+    {
+        return $this->hasMany(UserRecentSearch::class);
+    }
+
+    public function userSearchs()
+    {
+        return $this->hasMany(UserSearch::class);
+    }
+
+    public function advertisingRequests()
+    {
+        return $this->hasMany(AdvertisingRequest::class);
+    }
+
+    public function feedbacks()
+    {
+        return $this->hasMany(Feedback::class);
+    }
+
+    public function devices()
+    {
+        return $this->hasMany(Device::class, 'deviceable_id')
+            ->where('deviceable_type', 'users');
     }
 
     public function resolveRouteBinding($value, $field = null)
