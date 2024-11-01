@@ -19,6 +19,11 @@ class User extends Authenticatable
     public $incrementing = false;
     protected $keyType = "string";
 
+    const TYPE_PHONE        = 1;
+
+    const STATUS_UNACTIVE   = 0;
+    const STATUS_ACTIVE     = 1;
+
     /**
      * The attributes that are mass assignable.
      *

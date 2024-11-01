@@ -14,8 +14,8 @@ return new class extends Migration
         Schema::create('users', function (Blueprint $table) {
 //            $table->increments('id');
             $table->uuid('id')->primary();
-            $table->integer('account_id')->index();
-            $table->string('email', 50)->unique();
+            $table->integer('account_id')->nullable()->index();
+            $table->string('email', 200)->nullable()->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password')->nullable();
             $table->boolean('owner')->default(false);

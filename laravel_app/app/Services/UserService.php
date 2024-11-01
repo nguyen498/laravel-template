@@ -117,7 +117,6 @@ class UserService extends BaseService
             }
 
             $data = $this->repo_otp_attempt->create([
-                'name' => isset($inputs['name']) ? $inputs['name'] : null,
                 'phone' => isset($inputs['phone']) ? $inputs['phone'] : null,
                 'status' => OtpAttempt::NOT_USE,
                 'otp' => $inputs['otp'],
@@ -261,7 +260,7 @@ class UserService extends BaseService
         $this->repo_otp_attempt->update($data_attempt->id, ['status' => OtpAttempt::DONE]);
 
         $data = $this->repo_base->create([
-            'name' => isset($inputs['name']) ? $inputs['name'] : null,
+//            'name' => isset($inputs['name']) ? $inputs['name'] : null,
             'password' => bcrypt($inputs['password']),
             'phone' => $data_attempt->phone,
             'reference' => $this->generateReference(null),
@@ -696,11 +695,14 @@ class UserService extends BaseService
 
     public function generateColumn($inputs, $columns)
     {
-        if (isset($inputs['name']) && $inputs['name'] !== 'all') {
-            array_push($columns, "users.name = '" . $inputs['name'] . "'");
+        if (isset($inputs['first_name']) && $inputs['first_name'] !== 'all') {
+            array_push($columns, $this->getTableName() . ".first_name = '" . $inputs['first_name'] . "'");
+        }
+        if (isset($inputs['last_name']) && $inputs['last_name'] !== 'all') {
+            array_push($columns, $this->getTableName() . ".last_name = '" . $inputs['last_name'] . "'");
         }
         if (isset($inputs['email']) && $inputs['email'] !== 'all') {
-            array_push($columns, "users.email = '" . $inputs['email'] . "'");
+            array_push($columns, $this->getTableName() . ".email = '" . $inputs['email'] . "'");
         }
         return $columns;
     }
