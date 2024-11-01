@@ -84,7 +84,7 @@ class EmployeeService extends BaseService
         if(!isset($inputs['password'])) {
             return [ 'code' => '003' , 'message' => 'mật khẩu'];
         }
-        $input_users = ['last_login_at' => Carbon::now()->toDateTimeString()];
+        $input_users = ['last_login' => Carbon::now()->toDateTimeString()];
 
         $employee = $this->repo_base->findOneBy(['username' => $inputs['username']]);
         if(!isset($employee)) {
@@ -241,8 +241,8 @@ class EmployeeService extends BaseService
             $inputs['password'] = Hash::make($inputs['password']);
         }
         // auto set data
-        if(!isset($inputs['last_login_at'])) {
-            $inputs['last_login_at'] = Carbon::now()->toDateTimeString();
+        if(!isset($inputs['last_login'])) {
+            $inputs['last_login'] = Carbon::now()->toDateTimeString();
         }
 
         if(isset($inputs['birth_date'])) {
@@ -393,7 +393,7 @@ class EmployeeService extends BaseService
         return [
             $this->getTableName() .'.created_at',
             $this->getTableName() .'.updated_at',
-            $this->getTableName() .'.last_login_at',
+            $this->getTableName() .'.last_login',
             $this->getTableName() .'.birth_date'
         ];
     }

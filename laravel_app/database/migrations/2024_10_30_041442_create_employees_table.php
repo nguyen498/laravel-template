@@ -20,6 +20,7 @@ return new class extends Migration
             $table->string('email', 255)->unique(); // Unique email
             $table->string('phone', 20)->nullable(); // Phone number
             $table->text('description')->nullable(); // Description
+            $table->dateTime('last_login')->nullable();
             $table->tinyInteger('type')->default(1)->nullable(); // Description
             $table->tinyInteger('status')->default(1)->nullable(); // Description
             $table->softDeletes(); // Soft delete timestamp
