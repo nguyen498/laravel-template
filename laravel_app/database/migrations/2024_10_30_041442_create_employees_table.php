@@ -22,6 +22,7 @@ return new class extends Migration
             $table->text('description')->nullable(); // Description
             $table->tinyInteger('type')->default(1)->nullable(); // Description
             $table->tinyInteger('status')->default(1)->nullable(); // Description
+            $table->rememberToken();
             $table->softDeletes(); // Soft delete timestamp
             $table->timestamps(); // Created at and updated at timestamps
         });

@@ -1,7 +1,7 @@
-import { useState } from 'react';
-import { Link, usePage } from '@inertiajs/react';
 import { PageProps } from '@/types';
+import { Link, usePage } from '@inertiajs/react';
 import { ChevronDown } from 'lucide-react';
+import { useState } from 'react';
 
 export default () => {
   const { auth } = usePage<PageProps>().props;
@@ -9,7 +9,7 @@ export default () => {
 
   return (
     <div className="flex items-center justify-between w-full p-4 text-sm bg-white border-b md:py-0 md:px-12 d:text-md">
-      <div className="mt-1 mr-4">{auth.user.account.name}</div>
+      <div className="mt-1 mr-4">{auth.user.first_name}</div>
       <div className="relative">
         <div
           className="flex items-center cursor-pointer select-none group"
