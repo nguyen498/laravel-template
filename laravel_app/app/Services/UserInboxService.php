@@ -1,31 +1,448 @@
 <?php
 
+
 namespace App\Services;
 
+
+use App\Constants\PolymorphyMap;
+use App\Constants\QueueMap;
+use App\Jobs\ProcessSendNotificationInboxJob;
+use App\Jobs\ProcessSendNotificationInboxOneTimeJob;
+use App\Jobs\ProcessSendNotificationOneTimeJob;
+use App\Models\Notification;
 use App\Models\UserInbox;
+use App\Repositories\Interfaces\NotificationRepositoryInterface;
 use App\Repositories\Interfaces\UserInboxRepositoryInterface;
 use App\Services\Base\BaseService;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\Auth;
 
 class UserInboxService extends BaseService
 {
     protected $repo_base;
-    protected $with;
+    protected $repo_notification;
+    protected $service_send_notification;
 
     public function __construct(
-        UserInboxRepositoryInterface $repo_base
-    )
-    {
-        $this->repo_base = $repo_base;
-        $this->with = [];
+        UserInboxRepositoryInterface $repo_base,
+        NotificationRepositoryInterface $repo_notification,
+        SendNotificationService $service_send_notification
+    ) {
+        $this->repo_base                    = $repo_base;
+        $this->repo_notification            = $repo_notification;
+        $this->service_send_notification    = $service_send_notification;
     }
 
     public function getModelName()
     {
-        return 'User inbox';
+        return 'Hộp thư';
     }
 
     public function getTableName()
     {
         return (new UserInbox())->getTable();
+    }
+
+    public function searchApp($inputs) {
+        $this->is_app = true;
+        $auth = $this->getAuthInputs($inputs);
+        $inputs['filter']['user_id'] = $auth['user_id'];
+        $inputs['filter']['user_type'] = $auth['user_type'];
+        return $this->search($inputs);
+    }
+
+    public function updateReadByUser($inputs) {
+        $inputs = $this->getAuthInputs($inputs);
+        $input_conds = [
+            'user_id' => $inputs['user_id'],
+            'user_type' => $inputs['user_type'],
+            'read_status' => UserInbox::READ_STATUS_NOT_READ
+        ];
+        $ids = [];
+        if(isset($inputs['ids']) && count($inputs['ids']) > 0){
+            $ids = $inputs['ids'];
+        }
+        $datas = $this->repo_base->findByIdAndType($ids, $input_conds, ['id', 'user_id']);
+        if(count($datas) >0) {
+            $ids = [];
+            foreach($datas as $dat) {
+                array_push($ids, $dat->id);
+            }
+            $this->repo_base->updateDBs($ids, ['read_status' => UserInbox::READ_STATUS_READ]);
+        }
+
+        return [
+            'code' => '200',
+            'message' => 'update successful'
+        ];
+    }
+
+    public function deleteByUser($inputs) {
+        $inputs = $this->getAuthInputs($inputs);
+        $input_conds = [
+            'user_id' => $inputs['user_id'],
+            'user_type' => $inputs['user_type']
+        ];
+        $ids = [];
+        if(isset($inputs['ids']) && count($inputs['ids']) > 0){
+            $ids = $inputs['ids'];
+        }
+        $datas = $this->repo_base->findByIdAndType($ids, $input_conds, ['id', 'user_id']);
+        if(count($datas) >0) {
+            $ids = [];
+            foreach($datas as $dat) {
+                array_push($ids, $dat->id);
+            }
+            $this->repo_base->deleteByIds($ids);
+        }
+
+        return [
+            'code' => '200',
+            'message' => 'delete successful'
+        ];
+    }
+
+    public function storeUser($inputs){
+        if(!isset($inputs['type'])) {
+            return [ 'code' => '003', 'message' => 'Loại thông báo' ];
+        }
+        if(!isset($inputs['user_id'])) {
+            return [ 'code' => '003', 'message' => 'Id người dùng' ];
+        }
+        if(!isset($inputs['user_type'])) { $inputs['user_type'] = PolymorphyMap::USER; }
+        if(!isset($inputs['comment_type'])) { $inputs['comment_type'] = UserInbox::COMMENT_TYPE_WITHOUT_COMMENT; }
+        if(!isset($inputs['read_status'])) { $inputs['read_status'] = UserInbox::READ_STATUS_NOT_READ; }
+        if(!isset($inputs['status'])) { $inputs['status'] = UserInbox::STATUS_NEW; }
+
+        $inputs['title'] = $this->generatePassengerTitle($inputs['type'], null);
+        if(!isset($inputs['title'])) {
+            return [ 'code' => '008', 'message' => 'Loại thông báo' ];
+        }
+        if(in_array($inputs['type'], [
+            UserInbox::TYPE_PASSENGER_CONFIRM_TRIP,
+            UserInbox::TYPE_PASSENGER_ARRIVED_TRIP,
+            UserInbox::TYPE_PASSENGER_FINISHED_TRIP,
+            UserInbox::TYPE_PASSENGER_INSURANCE_TRIP])) {
+            $inputs['data'] = $this->generateDataTrip($inputs['trip'], $inputs['type']);
+        }
+        $inputs['content'] = $this->generatePassengerContent($inputs['type'], $inputs['data'], null);
+        if(isset($inputs['data']['trip'])) {
+            // unset data trip
+            foreach(['request_log', 'response_log'] as $val) {
+                unset($inputs['data']['trip'][$val]);
+            }
+        }
+
+        $inputs['data'] = json_encode($inputs['data'], JSON_UNESCAPED_UNICODE);
+        // create inbox
+        $user_inbox = $this->repo_base->create($inputs);
+        // send to inbox
+        $job = (new ProcessSendNotificationInboxJob($user_inbox))
+            ->onQueue(QueueMap::QUEUE_USER_INBOX);
+        dispatch($job);
+        return [
+            'code' => '200',
+            'data' => $this->formatData($user_inbox)
+        ];
+    }
+
+    public function sendChatTrip($inputs){
+        $inputs['type'] = UserInbox::TYPE_TRIP_CHAT;
+        if(!isset($inputs['user_id'])) {
+            return [ 'code' => '003', 'message' => 'Id user' ];
+        }
+        if(!isset($inputs['user_type'])) { $inputs['user_type'] = PolymorphyMap::USER; }
+        if(!isset($inputs['comment_type'])) { $inputs['comment_type'] = UserInbox::COMMENT_TYPE_WITHOUT_COMMENT; }
+        if(!isset($inputs['read_status'])) { $inputs['read_status'] = UserInbox::READ_STATUS_NOT_READ; }
+        if(!isset($inputs['status'])) { $inputs['status'] = UserInbox::STATUS_NEW; }
+
+        $inputs['title'] = $this->generateTitleChatTrip($inputs['user_type']);
+        if(!isset($inputs['title'])) {
+            return [ 'code' => '008', 'message' => 'Loại thông báo' ];
+        }
+        $inputs['data'] = [
+            'trip_id' => $inputs['trip_id'],
+            'trip_reference' => $inputs['trip_reference'],
+            'type' => UserInbox::TYPE_TRIP_CHAT
+        ];
+        $reference = isset($inputs['trip_reference']) ? $inputs['trip_reference'] : null;
+        $inputs['content'] = $this->generateContentChatTrip($inputs['user_type'], $reference);
+        $inputs['data'] = json_encode($inputs['data'], JSON_UNESCAPED_UNICODE);
+        // create inbox
+        $user_inbox = $this->repo_base->create($inputs);
+        // send to inbox
+        $job = (new ProcessSendNotificationInboxOneTimeJob($user_inbox))
+            ->onQueue(QueueMap::QUEUE_USER_INBOX);
+        dispatch($job);
+        return [
+            'code' => '200',
+            'data' => $this->formatData($user_inbox)
+        ];
+    }
+
+    public function sendChatSupport($inputs){
+        $inputs['type'] = UserInbox::TYPE_SUPPORT_CHAT;
+        if(!isset($inputs['user_id'])) {
+            return [ 'code' => '003', 'message' => 'Id user' ];
+        }
+        if(!isset($inputs['user_type'])) { $inputs['user_type'] = PolymorphyMap::USER; }
+        if(!isset($inputs['comment_type'])) { $inputs['comment_type'] = UserInbox::COMMENT_TYPE_WITHOUT_COMMENT; }
+        if(!isset($inputs['read_status'])) { $inputs['read_status'] = UserInbox::READ_STATUS_NOT_READ; }
+        if(!isset($inputs['status'])) { $inputs['status'] = UserInbox::STATUS_NEW; }
+
+        $inputs['title'] = $this->generateTitleChatSupport($inputs['user_type']);
+        if(!isset($inputs['title'])) {
+            return [ 'code' => '008', 'message' => 'Loại thông báo' ];
+        }
+        $inputs['data'] = [
+            'support_id' => $inputs['support_id'],
+            'support_reference' => $inputs['support_reference'],
+            'support_title' => $inputs['support_title'],
+            'type' => UserInbox::TYPE_SUPPORT_CHAT
+        ];
+        $inputs['content'] = $this->generateContentChatSupport($inputs['user_type'], $inputs['support_title']);
+        $inputs['data'] = json_encode($inputs['data'], JSON_UNESCAPED_UNICODE);
+        // create inbox
+        $user_inbox = $this->repo_base->create($inputs);
+        // send to inbox
+        $job = (new ProcessSendNotificationInboxOneTimeJob($user_inbox))
+            ->onQueue(QueueMap::QUEUE_USER_INBOX);
+        dispatch($job);
+        return [
+            'code' => '200',
+            'data' => $this->formatData($user_inbox)
+        ];
+    }
+
+    public function sendNotification($inbox) {
+        if(in_array($inbox->status, [UserInbox::STATUS_NEW])) {
+            $cover = isset($inbox->medias) && count($inbox->medias) > 0 ? $inbox->medias[0]->path : null;
+            $data = isset($inbox->data) ? json_decode($inbox->data, true) : [];
+            if(isset($cover)){
+                $data['cover'] = $cover;
+            }
+            $this->service_send_notification->sendNotificationByUserIds([$inbox->user_id], $inbox->user_type, [
+                'data' => count($data) > 0 ? json_encode($data, JSON_UNESCAPED_UNICODE) : null,
+                'content' => $inbox->content,
+                'title' => $inbox->title
+            ]);
+            // TODO: send to one signal
+            $this->successSendNotification($inbox);
+        }
+        return $inbox;
+    }
+
+    public function sendOneTimeNotification($inbox) {
+        if(in_array($inbox->status, [UserInbox::STATUS_NEW])) {
+            $cover = isset($inbox->medias) && count($inbox->medias) > 0 ? $inbox->medias[0]->path : null;
+            $data = isset($inbox->data) ? json_decode($inbox->data, true) : [];
+            if(isset($cover)){
+                $data['cover'] = $cover;
+            }
+
+            $this->service_send_notification->sendNotificationByUserIds([$inbox->user_id], $inbox->user_type, [
+                'data' => count($data) > 0 ? json_encode($data, JSON_UNESCAPED_UNICODE) : null,
+                'content' => $inbox->content,
+                'title' => $inbox->title
+            ]);
+            // delete after finished
+            $this->repo_base->delete($inbox->id);
+        }
+    }
+
+    private function successSendNotification($data) {
+        $data->attempts += 1;
+        $data->status = UserInbox::STATUS_SEND;
+        $data->update();
+        return $data;
+    }
+
+    public function failedSendNotification($data) {
+        if($data->attempts < config('enums.notification.retry')) {
+            $job = (new ProcessSendNotificationInboxJob($data))
+                ->onQueue(QueueMap::QUEUE_USER_INBOX)
+                ->delay(Carbon::now()->addMinute(1));
+            dispatch($job);
+            $data->attempts += 1;
+            $data->update();
+        } else {
+            $data->attempts += 1;
+            $data->status = UserInbox::STATUS_SEND_FAILED;
+            $data->update();
+        }
+        return $data;
+    }
+
+    private function generatePassengerTitle($type, $auth) {
+        switch ($type) {
+            case UserInbox::TYPE_PASSENGER_CONFIRM_TRIP:
+                return config('inbox_message.title.passenger.trip.confirm');
+            case UserInbox::TYPE_PASSENGER_FINISHED_TRIP:
+                return config('inbox_message.title.passenger.trip.finished');
+            case UserInbox::TYPE_PASSENGER_INSURANCE_TRIP:
+                return config('inbox_message.title.passenger.trip.trip_insurance');
+        }
+        return null;
+    }
+
+    private function generatePassengerContent($type, $data, $auth) {
+        switch ($type) {
+            case UserInbox::TYPE_PASSENGER_FINISHED_TRIP:
+                return config('inbox_message.message.passenger.trip.finished');
+            case UserInbox::TYPE_PASSENGER_INSURANCE_TRIP:
+                $reference = isset($data['trip']['reference']) ? $data['trip']['reference'] : '';
+                if(isset($data['trip']['trip_reference'])) {
+                    $reference = $data['trip']['trip_reference'];
+                }
+                return sprintf(config('inbox_message.message.passenger.trip.trip_insurance'),
+//                    $reference,
+                    isset($data['trip']['req_code']) ? $data['trip']['req_code'] : '');
+        }
+        return null;
+    }
+
+    private function generateDataTrip($trip, $type) {
+        $data = [
+            'trip' => $trip,
+            'type' => $type
+        ];
+        return $data;
+    }
+
+    private function generateTitleChatTrip($user_type) {
+        switch ($user_type) {
+            case PolymorphyMap::USER:
+                return config('inbox_message.title.chat_trip.passenger');
+        }
+        return null;
+    }
+
+    private function generateContentChatTrip($user_type, $reference) {
+        switch ($user_type) {
+            case PolymorphyMap::USER:
+                return sprintf(config('inbox_message.message.chat_trip.passenger'), '');
+        }
+        return null;
+    }
+
+    private function generateTitleChatSupport($user_type) {
+        switch ($user_type) {
+            case PolymorphyMap::USER:
+                return config('inbox_message.title.support.passenger');
+        }
+        return null;
+    }
+
+    private function generateContentChatSupport($user_type, $title) {
+        switch ($user_type) {
+            case PolymorphyMap::USER:
+                return sprintf(config('inbox_message.message.support.passenger'), $title);
+        }
+        return null;
+    }
+
+    public function checkInputs($inputs, $id)
+    {
+        $inputs = $this->getAuthInputs($inputs);
+        if (!isset($inputs['support_id'])) {
+            return ['is_failed' => true, 'code' => '003', 'message' => 'Hỗ trợ'];
+        }
+
+        if (!isset($inputs['title'])) {
+            return ['is_failed' => true, 'code' => '003', 'message' => 'Tiêu đề'];
+        }
+
+        if (!isset($inputs['content'])) {
+            return ['is_failed' => true, 'code' => '003', 'message' => 'Nội dung'];
+        }
+
+        if(!isset($inputs['status'])) {
+            $inputs['status'] = UserInbox::STATUS_NEW;
+        }
+        if(isset($inputs['medias'])){
+            $inputs['medias'] = json_encode($inputs['medias'], JSON_UNESCAPED_UNICODE);
+        }
+        return [
+            'is_failed' => false,
+            'inputs' => $inputs
+        ];
+    }
+
+    public function generateColumn($inputs, $columns) {
+        if(isset($inputs['status']) && $inputs['status'] != 'all') {
+            array_push($columns, $this->getTableName() . '.status = \'' . $inputs['status'] . '\'');
+        }
+        if(isset($inputs['type']) && $inputs['type'] != 'all') {
+            array_push($columns, $this->getTableName() . '.type = \'' . $inputs['type'] . '\'');
+        }
+        if(isset($inputs['support_id']) && $inputs['support_id'] != 'all') {
+            array_push($columns, $this->getTableName() . '.support_id = \'' . $inputs['support_id'] . '\'');
+        }
+        if(isset($inputs['user_id']) && $inputs['user_id'] != 'all') {
+            array_push($columns, $this->getTableName() . '.user_id = \'' . $inputs['user_id'] . '\'');
+        }
+        if(isset($inputs['user_type']) && $inputs['user_type'] != 'all') {
+            array_push($columns, $this->getTableName() . '.user_type = \'' . $inputs['user_type'] . '\'');
+        }
+        if(isset($inputs['read_status']) && $inputs['read_status'] != 'all') {
+            array_push($columns, $this->getTableName() . '.read_status = \'' . $inputs['read_status'] . '\'');
+        }
+        return $columns;
+    }
+
+    public function formatData($data)
+    {
+        $res = parent::formatData($data);
+        if(isset($res['data'])) {
+            $res['data'] = json_decode($res['data'], true);
+        }
+        $res['type_name'] = config('enums.user_inbox.type')[$res['type']];
+        $res['read_status_name'] = config('enums.user_inbox.read_status')[$res['read_status']];
+        return $res;
+    }
+
+    public function getQueryDateField() {
+        return [
+            $this->getTableName() .'.created_at',
+            $this->getTableName() .'.updated_at'
+        ];
+    }
+
+    public function getQueryField() {
+        return [
+            $this->getTableName() .'.id',
+            $this->getTableName() .'.user_id',
+            $this->getTableName() .'.user_type',
+            $this->getTableName() .'.title',
+            $this->getTableName() .'.content',
+            $this->getTableName() .'.data',
+            $this->getTableName() .'.type',
+            $this->getTableName() .'.comment_type',
+            $this->getTableName() .'.status',
+            $this->getTableName() .'.read_status',
+        ];
+    }
+
+    private function getAuthInputs($inputs) {
+        $auth = Auth::guard('users')->user();
+        // auth by user
+        if(isset($auth)) {
+            $inputs['user_id'] = $auth->id;
+            $inputs['user_type'] = PolymorphyMap::USER;
+        } else {
+            $auth = Auth::guard('employees')->user();
+            if(isset($auth)) {
+                $inputs['user_id'] = $auth->id;
+                $inputs['user_type'] = PolymorphyMap::EMPLOYEE;
+            }
+        }
+
+//        if(isset($auth['phone'])) {
+//            $inputs['phone'] = $auth['phone'];
+//        }
+//        if(isset($auth['name'])) {
+//            $inputs['name'] = $auth['name'];
+//        }
+        return $inputs;
     }
 }

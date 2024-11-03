@@ -1,6 +1,6 @@
 services:
-  job-posting-v2:
-    container_name: job-posting-v2
+  job-posting:
+    container_name: job-posting
     build:
       context: .
       dockerfile: .docker/Dockerfile_dev
@@ -21,6 +21,42 @@ services:
       - my-duplicati-net
     depends_on:
       - mysql-db
+
+  job-posting-queue:
+    container_name: job-posting-queue
+    build:
+      context: .
+      dockerfile: .docker/Dockerfile_dev
+    image: registry.gitlab.com/poisongass/job-posting:1.0.0
+    environment:
+      CONTAINER_ROLE: queue
+    env_file: ./laravel_app/.env
+    volumes:
+      - ./laravel_app:/var/www/laravel_app
+    #      - /var/www/laravel_app/storage
+    #      - /var/www/laravel_app/bootstrap/cache
+    networks:
+      - my-duplicati-net
+    depends_on:
+      - job-posting
+
+  job-posting-schedule:
+    container_name: job-posting-schedule
+    build:
+      context: .
+      dockerfile: .docker/Dockerfile_dev
+    image: registry.gitlab.com/poisongass/job-posting:1.0.0
+    environment:
+      CONTAINER_ROLE: scheduler
+    env_file: ./laravel_app/.env
+    volumes:
+      - ./laravel_app:/var/www/laravel_app
+    #      - /var/www/laravel_app/storage
+    #      - /var/www/laravel_app/bootstrap/cache
+    networks:
+      - my-duplicati-net
+    depends_on:
+      - job-posting
 
   mysql-db:
     image: "mariadb:11.1"
@@ -51,13 +87,13 @@ services:
     ports:
       - "8081:80"
 
-  # redis:
-  #   image: "redis:alpine"
-  #   # ports:
-  #   #   - '${FORWARD_REDIS_PORT:-6379}:6379'
-  #   command: redis-server --requirepass someredispassword
-  #   networks:
-  #     - my-duplicati-net
+  redis:
+    image: "redis:alpine"
+    ports:
+      - '${FORWARD_REDIS_PORT:-6379}:6379'
+    command: redis-server --requirepass someredispassword
+    networks:
+      - my-duplicati-net
 
 #  meilisearch:
 #    image: "getmeili/meilisearch:latest"

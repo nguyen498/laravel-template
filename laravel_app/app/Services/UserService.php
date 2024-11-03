@@ -188,7 +188,7 @@ class UserService extends BaseService
     public function loginWithToken($inputs)
     {
         $this->is_app = true;
-        $user = Auth::guard('users')->user();;
+        $user = Auth::guard('users')->user();
 
         if(!isset($user)){
             return [

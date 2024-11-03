@@ -18,6 +18,23 @@ class Notification extends Model
     public $incrementing = false;
     protected $keyType = 'string';
 
+    //status
+    const STATUS_DRAFF          = 0;
+    const STATUS_READY          = 1;
+    const STATUS_SEND           = 2;
+    //type
+    const TYPE_ALL              = 1;
+    const TYPE_USER             = 2;
+    //send_type
+    const TYPE_ONCE             = 1;
+    const TYPE_EVERYDAY         = 2;
+    const TYPE_EVERY_WEEK       = 3;
+    const TYPE_EVERY_MONTH      = 4;
+    // send
+    const SEND_NEW                  = 1;
+    const SEND_SUCCESS              = 2;
+    const SEND_DESTROY              = 3;
+
     protected $fillable = [
         'id',
         'reference',
@@ -50,9 +67,10 @@ class Notification extends Model
 
     protected $searchable = [
         'columns' => [
-            'notifications.title' => 10,
-            'notifications.content' => 10,
-        ],
+            'notifications.title' => 5,
+            'notifications.send_date' => 5,
+            'notifications.notificationable_type' => 5
+        ]
     ];
 
     public function searchText($term)
