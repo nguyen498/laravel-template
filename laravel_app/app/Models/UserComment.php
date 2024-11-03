@@ -14,6 +14,13 @@ class UserComment extends Model
     protected $keyType = 'string';
     public $incrementing = false;
 
+    // type
+    const TYPE_USER         = 1;
+    const TYPE_SYSTEM       = 2;
+    // is read
+    const NOT_READ          = 0;
+    const IS_READ           = 1;
+
     protected $fillable = [
         'id',
         'parent_id',
