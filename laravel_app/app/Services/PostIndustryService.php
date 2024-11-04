@@ -54,7 +54,7 @@ class PostIndustryService extends BaseService
             return [
                 'is_failed' => true,
                 'code' => '004',
-                'message' => 'Category'
+                'message' => 'Sub category'
             ];
         }
         $reference = isset($inputs['reference']) && !empty($inputs['reference']) ? $inputs['reference'] : null;
