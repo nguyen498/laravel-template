@@ -161,7 +161,7 @@ class PostService extends BaseService
             return [
                 'is_failed' => true,
                 'code' => '003',
-                'message' => 'Store name'
+                'message' => 'store name'
             ];
         }
         $data['store_name'] = $inputs['store_name'];
@@ -169,7 +169,7 @@ class PostService extends BaseService
             return [
                 'is_failed' => true,
                 'code' => '003',
-                'message' => 'Store address'
+                'message' => 'store address'
             ];
         }
         $data['store_address'] = $inputs['store_address'];
@@ -193,7 +193,7 @@ class PostService extends BaseService
             return [
                 'is_failed' => true,
                 'code' => '003',
-                'message' => 'Title'
+                'message' => 'title'
             ];
         }
         $data['title'] = $inputs['title'];
@@ -202,7 +202,7 @@ class PostService extends BaseService
             return [
                 'is_failed' => true,
                 'code' => '003',
-                'message' => 'Phone'
+                'message' => 'phone'
             ];
         }
         $data['phone'] = $inputs['phone'];
@@ -211,7 +211,7 @@ class PostService extends BaseService
             return [
                 'is_failed' => true,
                 'code' => '003',
-                'message' => 'Email'
+                'message' => 'email'
             ];
         }
         $data['email'] = $inputs['email'];
@@ -220,7 +220,7 @@ class PostService extends BaseService
             return [
                 'is_failed' => true,
                 'code' => '003',
-                'message' => 'Website'
+                'message' => 'website'
             ];
         }
         $data['website'] = $inputs['website'];
@@ -229,7 +229,7 @@ class PostService extends BaseService
             return [
                 'is_failed' => true,
                 'code' => '003',
-                'message' => 'Medias'
+                'message' => 'medias'
             ];
         }
         $data['medias'] = json_encode($inputs['medias']);
@@ -253,7 +253,7 @@ class PostService extends BaseService
             return [
                 'is_failed' => true,
                 'code' => '003',
-                'message' => 'Type'
+                'message' => 'type'
             ];
         }
 

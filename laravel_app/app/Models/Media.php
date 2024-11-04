@@ -9,6 +9,9 @@ use Illuminate\Database\Eloquent\Model;
 class Media extends Model
 {
     use HasFactory, UuidTrait;
+    //type
+    const PUBLIC        = 1;
+    const PRIVATE       = 2;
 
     protected $table = 'medias';
 

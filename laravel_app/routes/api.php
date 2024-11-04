@@ -190,11 +190,8 @@ Route::group(['prefix' => 'v1'], function () {
     });
 
     Route::prefix("medias")->group(function () {
-        Route::post('/store', [MediaApiController::class, 'store']);
-        Route::put('/update/{id}', [MediaApiController::class, 'update']);
-        Route::get('/findById/{id}', [MediaApiController::class, 'findById']);
-        Route::delete('/destroy/{id}', [MediaApiController::class, 'destroy']);
-        Route::post('/search', [MediaApiController::class, 'search']);
+        Route::post('/upload', [MediaApiController::class, 'upload']);
+        Route::delete('/delete/{id}', [MediaApiController::class, 'deleteMedia']);
     });
 
     Route::prefix("notifications")->group(function () {
