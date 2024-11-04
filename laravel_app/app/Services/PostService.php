@@ -225,15 +225,6 @@ class PostService extends BaseService
         }
         $data['website'] = $inputs['website'];
 
-        if(!isset($inputs['title'])){
-            return [
-                'is_failed' => true,
-                'code' => '003',
-                'message' => 'Title'
-            ];
-        }
-        $data['title'] = $inputs['title'];
-
         if(!isset($inputs['medias'])){
             return [
                 'is_failed' => true,
