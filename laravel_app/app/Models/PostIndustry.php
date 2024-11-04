@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class PostIndustry extends Model
 {
     use HasFactory, SoftDeletes, UuidTrait;
+    const pre_fix = 'PI';
 
     protected $table = 'post_industries';
 

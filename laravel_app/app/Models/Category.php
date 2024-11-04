@@ -9,6 +9,11 @@ use Illuminate\Database\Eloquent\Model;
 class Category extends Model
 {
     use HasFactory, UuidTrait;
+    const pre_fix = 'CAT';
+
+    //type
+    const HOME_OWNER = 1;
+    const COMMUNITY = 2;
 
     protected $table = 'categories';
 

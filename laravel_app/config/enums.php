@@ -7,7 +7,8 @@
  */
 return [
     'code_length' => [
-        'user' => 10
+        'user' => 10,
+        'employee' => 10,
     ],
     'notification' => [
         'prefix' => 'NOTI',

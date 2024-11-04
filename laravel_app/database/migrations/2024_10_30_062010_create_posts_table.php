@@ -37,6 +37,8 @@ return new class extends Migration
             $table->string('store_area', 255)->nullable(); // Area
             $table->text('medias')->nullable(); // JSON for images
             $table->string('slug', 255)->nullable(); // Slug for post link
+            $table->string('lng', 255)->nullable();
+            $table->string('lat', 255)->nullable();
 
             // Job recruitment information
             $table->string('work_position', 100)->nullable(); // Work position

@@ -29,6 +29,9 @@ use App\Http\Controllers\Api\UserPostApiController;
 use App\Http\Controllers\Api\UserRecentSearchApiController;
 use App\Http\Controllers\Api\UserSearchApiController;
 use App\Http\Controllers\Api\OneSignalApiController;
+use App\Http\Controllers\Api\PostApiController;
+use App\Http\Controllers\Api\PostIndustryApiController;
+use App\Http\Controllers\Api\PostAdvertisingApiController;
 
 
 Route::prefix("auth")->group(function () {
@@ -81,7 +84,7 @@ Route::group(['prefix' => 'v1'], function () {
 //        Route::group(['middleware' => 'auth:sanctum'], function () {
 //            Route::get('/loginWithToken', [UserApiController::class, 'loginWithToken']);
 //            Route::get('/findAll', [UserApiController::class, 'findAll']);
-//            Route::post('/update/{id}', [UserApiController::class, 'update']);
+//            Route::put('/update/{id}', [UserApiController::class, 'update']);
 //            Route::get('/findById/{id}', [UserApiController::class, 'findById']);
 //            Route::delete('/destroy/{id}', [UserApiController::class, 'destroy']);
 //            Route::post('/search', [UserApiController::class, 'search']);
@@ -213,7 +216,7 @@ Route::group(['prefix' => 'v1'], function () {
     Route::group(['prefix' => 'roles'], function(){
         Route::get('/findAll', [RoleApiController::class, 'findAll']);
         Route::post('/store', [RoleApiController::class, 'store']);
-        Route::post('/update/{id}', [RoleApiController::class, 'update']);
+        Route::put('/update/{id}', [RoleApiController::class, 'update']);
         Route::get('/findById/{id}', [RoleApiController::class, 'findById']);
         Route::delete('/destroy/{id}', [RoleApiController::class, 'destroy']);
         Route::post('/search', [RoleApiController::class, 'search']);
@@ -222,7 +225,7 @@ Route::group(['prefix' => 'v1'], function () {
     Route::group(['prefix' => 'states'], function(){
         Route::get('/findAll', [StateApiController::class, 'findAll']);
         Route::post('/store', [StateApiController::class, 'store']);
-        Route::post('/update/{id}', [StateApiController::class, 'update']);
+        Route::put('/update/{id}', [StateApiController::class, 'update']);
         Route::get('/findById/{id}', [StateApiController::class, 'findById']);
         Route::delete('/destroy/{id}', [StateApiController::class, 'destroy']);
         Route::post('/search', [StateApiController::class, 'search']);
@@ -231,7 +234,7 @@ Route::group(['prefix' => 'v1'], function () {
     Route::group(['prefix' => 'sub_categories'], function(){
         Route::get('/findAll', [SubCategoryApiController::class, 'findAll']);
         Route::post('/store', [SubCategoryApiController::class, 'store']);
-        Route::post('/update/{id}', [SubCategoryApiController::class, 'update']);
+        Route::put('/update/{id}', [SubCategoryApiController::class, 'update']);
         Route::get('/findById/{id}', [SubCategoryApiController::class, 'findById']);
         Route::delete('/destroy/{id}', [SubCategoryApiController::class, 'destroy']);
         Route::post('/search', [SubCategoryApiController::class, 'search']);
@@ -240,7 +243,7 @@ Route::group(['prefix' => 'v1'], function () {
     Route::group(['prefix' => 'user_action_posts'], function(){
         Route::get('/findAll', [UserActionPostApiController::class, 'findAll']);
         Route::post('/store', [UserActionPostApiController::class, 'store']);
-        Route::post('/update/{id}', [UserActionPostApiController::class, 'update']);
+        Route::put('/update/{id}', [UserActionPostApiController::class, 'update']);
         Route::get('/findById/{id}', [UserActionPostApiController::class, 'findById']);
         Route::delete('/destroy/{id}', [UserActionPostApiController::class, 'destroy']);
         Route::post('/search', [UserActionPostApiController::class, 'search']);
@@ -249,7 +252,7 @@ Route::group(['prefix' => 'v1'], function () {
     Route::group(['prefix' => 'user_chats'], function(){
         Route::get('/findAll', [UserChatApiController::class, 'findAll']);
         Route::post('/store', [UserChatApiController::class, 'store']);
-        Route::post('/update/{id}', [UserChatApiController::class, 'update']);
+        Route::put('/update/{id}', [UserChatApiController::class, 'update']);
         Route::get('/findById/{id}', [UserChatApiController::class, 'findById']);
         Route::delete('/destroy/{id}', [UserChatApiController::class, 'destroy']);
         Route::post('/search', [UserChatApiController::class, 'search']);
@@ -258,7 +261,7 @@ Route::group(['prefix' => 'v1'], function () {
     Route::group(['prefix' => 'user_comments'], function(){
         Route::get('/findAll', [UserCommentApiController::class, 'findAll']);
         Route::post('/store', [UserCommentApiController::class, 'store']);
-        Route::post('/update/{id}', [UserCommentApiController::class, 'update']);
+        Route::put('/update/{id}', [UserCommentApiController::class, 'update']);
         Route::get('/findById/{id}', [UserCommentApiController::class, 'findById']);
         Route::delete('/destroy/{id}', [UserCommentApiController::class, 'destroy']);
         Route::post('/search', [UserCommentApiController::class, 'search']);
@@ -267,7 +270,7 @@ Route::group(['prefix' => 'v1'], function () {
     Route::group(['prefix' => 'user_group_chats'], function(){
         Route::get('/findAll', [UserGroupChatApiController::class, 'findAll']);
         Route::post('/store', [UserGroupChatApiController::class, 'store']);
-        Route::post('/update/{id}', [UserGroupChatApiController::class, 'update']);
+        Route::put('/update/{id}', [UserGroupChatApiController::class, 'update']);
         Route::get('/findById/{id}', [UserGroupChatApiController::class, 'findById']);
         Route::delete('/destroy/{id}', [UserGroupChatApiController::class, 'destroy']);
         Route::post('/search', [UserGroupChatApiController::class, 'search']);
@@ -276,7 +279,7 @@ Route::group(['prefix' => 'v1'], function () {
     Route::group(['prefix' => 'user_inboxes'], function(){
         Route::get('/findAll', [UserInboxApiController::class, 'findAll']);
         Route::post('/store', [UserInboxApiController::class, 'store']);
-        Route::post('/update/{id}', [UserInboxApiController::class, 'update']);
+        Route::put('/update/{id}', [UserInboxApiController::class, 'update']);
         Route::get('/findById/{id}', [UserInboxApiController::class, 'findById']);
         Route::delete('/destroy/{id}', [UserInboxApiController::class, 'destroy']);
         Route::post('/search', [UserInboxApiController::class, 'search']);
@@ -285,7 +288,7 @@ Route::group(['prefix' => 'v1'], function () {
     Route::group(['prefix' => 'user_medias'], function(){
         Route::get('/findAll', [UserMediaApiController::class, 'findAll']);
         Route::post('/store', [UserMediaApiController::class, 'store']);
-        Route::post('/update/{id}', [UserMediaApiController::class, 'update']);
+        Route::put('/update/{id}', [UserMediaApiController::class, 'update']);
         Route::get('/findById/{id}', [UserMediaApiController::class, 'findById']);
         Route::delete('/destroy/{id}', [UserMediaApiController::class, 'destroy']);
         Route::post('/search', [UserMediaApiController::class, 'search']);
@@ -294,7 +297,7 @@ Route::group(['prefix' => 'v1'], function () {
     Route::group(['prefix' => 'user_posts'], function(){
         Route::get('/findAll', [UserPostApiController::class, 'findAll']);
         Route::post('/store', [UserPostApiController::class, 'store']);
-        Route::post('/update/{id}', [UserPostApiController::class, 'update']);
+        Route::put('/update/{id}', [UserPostApiController::class, 'update']);
         Route::get('/findById/{id}', [UserPostApiController::class, 'findById']);
         Route::delete('/destroy/{id}', [UserPostApiController::class, 'destroy']);
         Route::post('/search', [UserPostApiController::class, 'search']);
@@ -303,7 +306,7 @@ Route::group(['prefix' => 'v1'], function () {
     Route::group(['prefix' => 'user_recent_search'], function(){
         Route::get('/findAll', [UserRecentSearchApiController::class, 'findAll']);
         Route::post('/store', [UserRecentSearchApiController::class, 'store']);
-        Route::post('/update/{id}', [UserRecentSearchApiController::class, 'update']);
+        Route::put('/update/{id}', [UserRecentSearchApiController::class, 'update']);
         Route::get('/findById/{id}', [UserRecentSearchApiController::class, 'findById']);
         Route::delete('/destroy/{id}', [UserRecentSearchApiController::class, 'destroy']);
         Route::post('/search', [UserRecentSearchApiController::class, 'search']);
@@ -312,9 +315,36 @@ Route::group(['prefix' => 'v1'], function () {
     Route::group(['prefix' => 'user_search'], function(){
         Route::get('/findAll', [UserSearchApiController::class, 'findAll']);
         Route::post('/store', [UserSearchApiController::class, 'store']);
-        Route::post('/update/{id}', [UserSearchApiController::class, 'update']);
+        Route::put('/update/{id}', [UserSearchApiController::class, 'update']);
         Route::get('/findById/{id}', [UserSearchApiController::class, 'findById']);
         Route::delete('/destroy/{id}', [UserSearchApiController::class, 'destroy']);
         Route::post('/search', [UserSearchApiController::class, 'search']);
+    });
+
+    Route::group(['prefix' => 'posts'], function(){
+        Route::get('/findAll', [PostApiController::class, 'findAll']);
+        Route::post('/store', [PostApiController::class, 'store']);
+        Route::put('/update/{id}', [PostApiController::class, 'update']);
+        Route::get('/findById/{id}', [PostApiController::class, 'findById']);
+        Route::delete('/destroy/{id}', [PostApiController::class, 'destroy']);
+        Route::post('/search', [PostApiController::class, 'search']);
+    });
+
+    Route::group(['prefix' => 'post_industries'], function(){
+        Route::get('/findAll', [PostIndustryApiController::class, 'findAll']);
+        Route::post('/store', [PostIndustryApiController::class, 'store']);
+        Route::put('/update/{id}', [PostIndustryApiController::class, 'update']);
+        Route::get('/findById/{id}', [PostIndustryApiController::class, 'findById']);
+        Route::delete('/destroy/{id}', [PostIndustryApiController::class, 'destroy']);
+        Route::post('/search', [PostIndustryApiController::class, 'search']);
+    });
+
+    Route::group(['prefix' => 'post_advertising'], function(){
+        Route::get('/findAll', [PostAdvertisingApiController::class, 'findAll']);
+        Route::post('/store', [PostAdvertisingApiController::class, 'store']);
+        Route::put('/update/{id}', [PostAdvertisingApiController::class, 'update']);
+        Route::get('/findById/{id}', [PostAdvertisingApiController::class, 'findById']);
+        Route::delete('/destroy/{id}', [PostAdvertisingApiController::class, 'destroy']);
+        Route::post('/search', [PostAdvertisingApiController::class, 'search']);
     });
 });

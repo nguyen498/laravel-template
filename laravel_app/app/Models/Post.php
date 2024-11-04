@@ -10,6 +10,18 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Post extends Model
 {
     use HasFactory, SoftDeletes, UuidTrait;
+    const pre_fix = 'POST';
+
+    //type
+    const TYPE_TUYEN_DUNG   = 1;
+    const TYPE_TIM_VIEC     = 2;
+    const TYPE_SELL         = 3;
+    const TYPE_BUY          = 4;
+
+    //type_salary
+    const TYPE_NGAY          = 1;
+    const TYPE_TUAN          = 2;
+    const TYPE_THANG         = 3;
 
     protected $table = 'posts';
 
