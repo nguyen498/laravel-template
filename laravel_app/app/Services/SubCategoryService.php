@@ -73,4 +73,12 @@ class SubCategoryService extends BaseService
             'inputs' => $inputs
         ];
     }
+
+    public function generateColumn($inputs, $columns)
+    {
+        if(isset($inputs['category_id']) && $inputs['category_id'] !== 'all'){
+            array_push($columns, $this->getTableName() . ".category_id = '{$inputs['category_id']}'");
+        }
+        return $columns;
+    }
 }
