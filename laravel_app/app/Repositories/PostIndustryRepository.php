@@ -3,9 +3,9 @@
 namespace App\Repositories;
 
 use App\Models\PostIndustry;
-use App\Repositories\Interfaces\PostRepositoryInterface;
+use App\Repositories\Interfaces\PostIndustryRepositoryInterface;
 
-class PostIndustryRepository extends BaseRepository implements PostRepositoryInterface
+class PostIndustryRepository extends BaseRepository implements PostIndustryRepositoryInterface
 {
 
     public function getModel()

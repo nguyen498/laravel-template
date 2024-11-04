@@ -9,13 +9,14 @@ use App\Repositories\Interfaces\SubCategoryRepositoryInterface;
 use App\Services\Base\BaseService;
 use App\Utils\StringHelpers;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 
 class PostService extends BaseService
 {
     protected $repo_base;
-    protected $repo_sub_category;
-    protected $repo_post_industry;
+    protected SubCategoryRepositoryInterface $repo_sub_category;
+    protected PostIndustryRepositoryInterface $repo_post_industry;
     protected $with;
 
     public function __construct(
@@ -42,11 +43,13 @@ class PostService extends BaseService
 
     public function store($inputs)
     {
+        $user = Auth::user();
         $validate = $this->checkInputs($inputs, null);
         if ($validate['is_failed']) {
             return $validate;
         }
         $input_data = $validate['inputs'];
+        $input_data['user_id'] = $user->id;
 
         $sub_category = $this->repo_sub_category->findById($input_data['sub_category_id'], ['category']);
         if(!isset($sub_category)){
@@ -61,7 +64,7 @@ class PostService extends BaseService
         $input_data['category_id'] = $sub_category->category->id;
         $input_data['category_name'] = $sub_category->category->name;
 
-        $post_industry = $this->repo_post_industry->findWhereBy([
+        $post_industry = $this->repo_post_industry->findOneBy([
            'sub_category_id' => $input_data['sub_category_id']
         ]);
         if(isset($post_industry)){
@@ -79,6 +82,7 @@ class PostService extends BaseService
 
     public function update($id, $inputs)
     {
+        $user = Auth::user();
         $data = $this->repo_base->findById($id);
         if (!isset($data)) {
             return ['code' => '004', 'message' => $this->getModelName()];
@@ -88,6 +92,12 @@ class PostService extends BaseService
             return $validate;
         }
         $input_data = $validate['inputs'];
+        if($user->id !== $data->user_id){
+            return [
+                'code' => '008',
+                'message' => 'User'
+            ];
+        }
 
         $sub_category = $this->repo_sub_category->findById($input_data['sub_category_id'], ['category']);
         if(!isset($sub_category)){
@@ -102,7 +112,7 @@ class PostService extends BaseService
         $input_data['category_id'] = $sub_category->category->id;
         $input_data['category_name'] = $sub_category->category->name;
 
-        $post_industry = $this->repo_post_industry->findWhereBy([
+        $post_industry = $this->repo_post_industry->findOneBy([
             'sub_category_id' => $input_data['sub_category_id']
         ]);
         if(isset($post_industry)){
@@ -119,6 +129,30 @@ class PostService extends BaseService
         ];
     }
 
+    public function destroy($id)
+    {
+        $user = Auth::user();
+        $data = $this->repo_base->findById($id);
+
+        if (!isset($data)) {
+            return ['code' => '004', 'message' => $this->getModelName()];
+        }
+
+        if($user->id !== $data->user_id){
+            return [
+                'code' => '008',
+                'message' => 'User'
+            ];
+        }
+
+        $data->delete();
+
+        return [
+            'code' => '200',
+            'message' => 'Deleted successfully'
+        ];
+    }
+
     public function checkInputs($inputs, $id)
     {
         $data = [];
@@ -130,6 +164,7 @@ class PostService extends BaseService
                 'message' => 'Store name'
             ];
         }
+        $data['store_name'] = $inputs['store_name'];
         if(!isset($inputs['store_address'])){
             return [
                 'is_failed' => true,
@@ -137,20 +172,23 @@ class PostService extends BaseService
                 'message' => 'Store address'
             ];
         }
+        $data['store_address'] = $inputs['store_address'];
         if(!isset($inputs['lng'])){
             return [
                 'is_failed' => true,
                 'code' => '003',
-                'message' => 'Store address'
+                'message' => 'longitude'
             ];
         }
+        $data['lng'] = $inputs['lng'];
         if(!isset($inputs['lat'])){
             return [
                 'is_failed' => true,
                 'code' => '003',
-                'message' => 'Store address'
+                'message' => 'latitude'
             ];
         }
+        $data['lat'] = $inputs['lat'];
         if(!isset($inputs['title'])){
             return [
                 'is_failed' => true,
@@ -158,6 +196,44 @@ class PostService extends BaseService
                 'message' => 'Title'
             ];
         }
+        $data['title'] = $inputs['title'];
+
+        if(!isset($inputs['phone'])){
+            return [
+                'is_failed' => true,
+                'code' => '003',
+                'message' => 'Phone'
+            ];
+        }
+        $data['phone'] = $inputs['phone'];
+
+        if(!isset($inputs['email'])){
+            return [
+                'is_failed' => true,
+                'code' => '003',
+                'message' => 'Email'
+            ];
+        }
+        $data['email'] = $inputs['email'];
+
+        if(!isset($inputs['website'])){
+            return [
+                'is_failed' => true,
+                'code' => '003',
+                'message' => 'Website'
+            ];
+        }
+        $data['website'] = $inputs['website'];
+
+        if(!isset($inputs['title'])){
+            return [
+                'is_failed' => true,
+                'code' => '003',
+                'message' => 'Title'
+            ];
+        }
+        $data['title'] = $inputs['title'];
+
         if(!isset($inputs['medias'])){
             return [
                 'is_failed' => true,
@@ -165,6 +241,7 @@ class PostService extends BaseService
                 'message' => 'Medias'
             ];
         }
+        $data['medias'] = json_encode($inputs['medias']);
 //        if(!isset($inputs['category_id'])){
 //            return [
 //                'is_failed' => true,
@@ -176,7 +253,7 @@ class PostService extends BaseService
             return [
                 'is_failed' => true,
                 'code' => '003',
-                'message' => 'Store name'
+                'message' => 'sub category'
             ];
         }
         $data['sub_category_id'] = $inputs['sub_category_id'];
@@ -239,7 +316,7 @@ class PostService extends BaseService
                     'message' => 'Job contract'
                 ];
             }
-            $data['job_contract'] = $inputs['job_contract'];
+            $data['job_contract'] = json_encode($inputs['job_contract']);
             if(!isset($inputs['job_time'])){
                 return [
                     'is_failed' => true,
@@ -247,7 +324,7 @@ class PostService extends BaseService
                     'message' => 'Job time'
                 ];
             }
-            $data['job_time'] = $inputs['job_time'];
+            $data['job_time'] = json_encode($inputs['job_time']);
             if(!isset($inputs['job_experience'])){
                 return [
                     'is_failed' => true,
@@ -263,7 +340,7 @@ class PostService extends BaseService
                     'message' => 'Require skill'
                 ];
             }
-            $data['require_skill'] = $inputs['require_skill'];
+            $data['require_skill'] = json_encode($inputs['require_skill']);
             if(!isset($inputs['advance_skill'])){
                 return [
                     'is_failed' => true,
@@ -271,7 +348,7 @@ class PostService extends BaseService
                     'message' => 'Advance skill'
                 ];
             }
-            $data['advance_skill'] = $inputs['advance_skill'];
+            $data['advance_skill'] = json_encode($inputs['advance_skill']);
             if(!isset($inputs['job_environmental'])){
                 return [
                     'is_failed' => true,
@@ -279,7 +356,7 @@ class PostService extends BaseService
                     'message' => 'Job environmental'
                 ];
             }
-            $data['job_environmental'] = $inputs['job_environmental'];
+            $data['job_environmental'] = json_encode($inputs['job_environmental']);
         }
         else if($inputs['type'] === Post::TYPE_TIM_VIEC){
             if(!isset($inputs['work_position'])){
@@ -329,7 +406,7 @@ class PostService extends BaseService
                     'message' => 'Job contract'
                 ];
             }
-            $data['job_contract'] = $inputs['job_contract'];
+            $data['job_contract'] = json_encode($inputs['job_contract']);
             if(!isset($inputs['job_time'])){
                 return [
                     'is_failed' => true,
@@ -353,7 +430,7 @@ class PostService extends BaseService
                     'message' => 'Require skill'
                 ];
             }
-            $data['require_skill'] = $inputs['require_skill'];
+            $data['require_skill'] = json_encode($inputs['require_skill']);
             if(!isset($inputs['advance_skill'])){
                 return [
                     'is_failed' => true,
@@ -361,7 +438,7 @@ class PostService extends BaseService
                     'message' => 'Advance skill'
                 ];
             }
-            $data['advance_skill'] = $inputs['advance_skill'];
+            $data['advance_skill'] = json_encode($inputs['advance_skill']);
             if(!isset($inputs['job_environmental'])){
                 return [
                     'is_failed' => true,
@@ -369,7 +446,7 @@ class PostService extends BaseService
                     'message' => 'Job environmental'
                 ];
             }
-            $data['job_environmental'] = $inputs['job_environmental'];
+            $data['job_environmental'] = json_encode($inputs['job_environmental']);
         }
         else if ($inputs['type'] === Post::TYPE_BUY){
             if(!isset($inputs['business_type'])){
@@ -419,7 +496,7 @@ class PostService extends BaseService
                     'message' => 'Facilities'
                 ];
             }
-            $data['facilities'] = $inputs['facilities'];
+            $data['facilities'] = json_encode($inputs['facilities']);
             if(!isset($inputs['num_employees'])){
                 return [
                     'is_failed' => true,
@@ -443,7 +520,7 @@ class PostService extends BaseService
                     'message' => 'Lease agreement'
                 ];
             }
-            $data['lease_agreement'] = $inputs['lease_agreement'];
+            $data['lease_agreement'] = json_encode($inputs['lease_agreement']);
             if(!isset($inputs['avg_revenue'])){
                 return [
                     'is_failed' => true,
@@ -467,7 +544,7 @@ class PostService extends BaseService
                     'message' => 'Additional information'
                 ];
             }
-            $data['additional_infor'] = $inputs['additional_infor'];
+            $data['additional_infor'] = json_encode($inputs['additional_infor']);
         }
         else if ($inputs['type'] === Post::TYPE_SELL) {
             if(!isset($inputs['business_type'])){
@@ -517,7 +594,7 @@ class PostService extends BaseService
                     'message' => 'Facilities'
                 ];
             }
-            $data['facilities'] = $inputs['facilities'];
+            $data['facilities'] = json_encode($inputs['facilities']);
             if(!isset($inputs['num_employees'])){
                 return [
                     'is_failed' => true,
@@ -541,7 +618,7 @@ class PostService extends BaseService
                     'message' => 'Lease agreement'
                 ];
             }
-            $data['lease_agreement'] = $inputs['lease_agreement'];
+            $data['lease_agreement'] = json_encode($inputs['lease_agreement']);
             if(!isset($inputs['avg_revenue'])){
                 return [
                     'is_failed' => true,
@@ -550,14 +627,9 @@ class PostService extends BaseService
                 ];
             }
             $data['avg_revenue'] = $inputs['avg_revenue'];
-            if(!isset($inputs['support'])){
-                return [
-                    'is_failed' => true,
-                    'code' => '003',
-                    'message' => 'Support'
-                ];
+            if(isset($inputs['support'])){
+                $data['support'] = $inputs['support'];
             }
-            $data['support'] = $inputs['support'];
             if(!isset($inputs['additional_infor'])){
                 return [
                     'is_failed' => true,
@@ -565,12 +637,12 @@ class PostService extends BaseService
                     'message' => 'Additional information'
                 ];
             }
-            $data['additional_infor'] = $inputs['additional_infor'];
+            $data['additional_infor'] = json_encode($inputs['additional_infor']);
         }
-        $inputs['slug'] = Str::slug($inputs['title']);
+        $data['slug'] = Str::slug($data['title']);
         $reference = isset($inputs['reference']) && !empty($inputs['reference']) ? $inputs['reference'] : null;
         if(!isset($id)) {
-            $inputs['reference'] = $this->generateReference($reference);
+            $data['reference'] = $this->generateReference($reference);
         }
         return [
             'is_failed' => false,
@@ -581,10 +653,40 @@ class PostService extends BaseService
     public function generateReference($reference) {
         if(!isset($reference)) {
             $now = Carbon::now();
-            $reference = $this->repo_base->getReferenceByPrefix($now->format('ymd'), 'reference',5, true);
-            $pre_fix = Post::pre_fix;
-            return "{$pre_fix}{$reference}";
+            $pre_fix = Post::pre_fix.$now->format('ymd');
+            $reference = $this->repo_base->getReferenceByPrefix($pre_fix, 'reference',5, true);
+            return "{$reference}";
         }
         return $reference;
+    }
+
+    public function formatData($data)
+    {
+        $res = json_decode($data, true);
+        if(isset($res['medias'])){
+            $res['medias'] = json_decode($res['medias'], true);
+        }
+        if(isset($res['job_time'])){
+            $res['job_time'] = json_decode($res['job_time'], true);
+        }
+        if(isset($res['require_skill'])){
+            $res['require_skill'] = json_decode($res['require_skill'], true);
+        }
+        if(isset($res['advance_skill'])){
+            $res['advance_skill'] = json_decode($res['advance_skill'], true);
+        }
+        if(isset($res['job_environmental'])){
+            $res['job_environmental'] = json_decode($res['job_environmental'], true);
+        }
+        if(isset($res['lease_agreement'])){
+            $res['lease_agreement'] = json_decode($res['lease_agreement'], true);
+        }
+        if(isset($res['facilities'])){
+            $res['facilities'] = json_decode($res['facilities'], true);
+        }
+        if(isset($res['additional_infor'])){
+            $res['additional_infor'] = json_decode($res['additional_infor'], true);
+        }
+        return $res;
     }
 }

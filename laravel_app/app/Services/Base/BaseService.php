@@ -288,6 +288,9 @@ abstract class BaseService
     public function formatDataCms($data)
     {
         $res = json_decode($data, true);
+        if(isset($res['medias'])){
+            $res['medias'] = json_decode($res['medias'], true);
+        }
         return $res;
     }
 

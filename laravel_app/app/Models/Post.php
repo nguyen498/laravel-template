@@ -23,6 +23,11 @@ class Post extends Model
     const TYPE_TUAN          = 2;
     const TYPE_THANG         = 3;
 
+    //job_type
+    const JOB_TYPE_FULL_TIME      = 1;
+    const JOB_TYPE_PART_TIME      = 2;
+    const JOB_TYPE_ONLINE         = 3;
+
     protected $table = 'posts';
 
     protected $primaryKey = 'id';

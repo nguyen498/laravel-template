@@ -321,7 +321,7 @@ Route::group(['prefix' => 'v1'], function () {
         Route::post('/search', [UserSearchApiController::class, 'search']);
     });
 
-    Route::group(['prefix' => 'posts'], function(){
+    Route::group(['prefix' => 'posts', 'middleware' => ['auth:users']], function(){
         Route::get('/findAll', [PostApiController::class, 'findAll']);
         Route::post('/store', [PostApiController::class, 'store']);
         Route::put('/update/{id}', [PostApiController::class, 'update']);
