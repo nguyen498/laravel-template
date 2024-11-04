@@ -680,4 +680,39 @@ class PostService extends BaseService
         }
         return $res;
     }
+
+    public function generateColumn($inputs, $columns)
+    {
+        if(isset($inputs['category_id']) && $inputs['category_id'] !== 'all'){
+            array_push($columns, $this->getTableName() . ".category_id = '{$inputs['category_id']}'");
+        }
+        if(isset($inputs['post_industry_id']) && $inputs['post_industry_id'] !== 'all'){
+            array_push($columns, $this->getTableName() . ".post_industry_id = '{$inputs['post_industry_id']}'");
+        }
+        if(isset($inputs['sub_category_id']) && $inputs['sub_category_id'] !== 'all'){
+            array_push($columns, $this->getTableName() . ".sub_category_id = '{$inputs['sub_category_id']}'");
+        }
+        if(isset($inputs['price']) && is_array($inputs['price']) && count($inputs['price']) >= 2 && $inputs['price'] !== 'all'){
+            array_push($columns, $this->getTableName() . ".price BETWEEN {$inputs['price'][0]} AND {$inputs['price'][1]}");
+        }
+        if(isset($inputs['avg_revenue']) && is_array($inputs['avg_revenue']) && count($inputs['avg_revenue']) >= 2 && $inputs['avg_revenue'] !== 'all'){
+            array_push($columns, $this->getTableName() . ".avg_revenue BETWEEN {$inputs['avg_revenue'][0]} AND {$inputs['avg_revenue'][1]}");
+        }
+        if(isset($inputs['min_salary']) && is_array($inputs['min_salary']) && count($inputs['min_salary']) >= 2 && $inputs['min_salary'] !== 'all'){
+            array_push($columns, $this->getTableName() . ".min_salary BETWEEN {$inputs['min_salary'][0]} AND {$inputs['min_salary'][1]}");
+        }
+        if(isset($inputs['job_type']) && $inputs['job_type'] !== 'all'){
+            array_push($columns, $this->getTableName() . ".job_type = '{$inputs['job_type']}'");
+        }
+        if(isset($inputs['type']) && $inputs['type'] !== 'all'){
+            array_push($columns, $this->getTableName() . ".type = '{$inputs['type']}'");
+        }
+        if(isset($inputs['support']) && $inputs['support'] !== 'all'){
+            array_push($columns, $this->getTableName() . ".support = '{$inputs['support']}'");
+        }
+        if(isset($inputs['num_employees']) && $inputs['num_employees'] !== 'all'){
+            array_push($columns, $this->getTableName() . ".num_employees = '{$inputs['num_employees']}'");
+        }
+        return $columns;
+    }
 }
