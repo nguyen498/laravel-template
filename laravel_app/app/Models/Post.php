@@ -85,6 +85,7 @@ class Post extends Model implements Explored, IndexSettings, Aliased
         'avg_revenue',
         'support',
         'additional_infor',
+        'location'
     ];
 
     /**
@@ -99,6 +100,7 @@ class Post extends Model implements Explored, IndexSettings, Aliased
         'status' => 'integer',
         'support' => 'integer',
         'display_type' => 'integer',
+        'location' => 'json'
         // Add other casts as needed
     ];
 
@@ -162,6 +164,9 @@ class Post extends Model implements Explored, IndexSettings, Aliased
             'description' => [
                 'type' => 'text',
                 'analyzer' => 'post_analyzer',
+            ],
+            "location" => [
+                'type' => 'geo_point',
             ],
             'created_at' => 'date',
         ];

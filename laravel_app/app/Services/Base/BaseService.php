@@ -392,8 +392,8 @@ abstract class BaseService
 
     public function searchElastic($inputs)
     {
-        $inputs["limit"] ?? 1000;
-        $inputs["search"] ?? "";
+        $inputs["limit"] = $inputs["limit"] ?? 1000;
+        $inputs["search"] = $inputs["search"] ?? "";
         $isSelect = $inputs["is_select"] ?? 1;
 
         $search = $this->setSearchElastic($inputs);
@@ -492,11 +492,11 @@ abstract class BaseService
     }
 
     private function setSearchElastic($inputs) {
-        $inputs["limit"] ?? 1000;
-        $inputs["search"] ?? "";
+        $inputs["limit"] = $inputs["limit"] ?? 1000;
+        $inputs["search"] = $inputs["search"] ?? "";
         $isSelect = $inputs["is_select"] ?? 1;
 
-        $search = $this->repo_base->getModel()->search($inputs["search"]);
+        $search = $this->repo_base->getModel()::search($inputs["search"]);
         // ->take(1000)->get(); đoạn này chỉ để tự phân trang, không hoạt động với paginate
 
         if (isset($inputs["must"])) {

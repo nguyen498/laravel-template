@@ -325,6 +325,8 @@ Route::group(['prefix' => 'v1'], function () {
         Route::get('/findById/{id}', [PostApiController::class, 'findById']);
         Route::delete('/destroy/{id}', [PostApiController::class, 'destroy']);
         Route::post('/search', [PostApiController::class, 'search']);
+
+        Route::post('/searchElastic', [PostApiController::class, 'searchElastic']);
     });
 
     Route::group(['prefix' => 'post_industries'], function(){

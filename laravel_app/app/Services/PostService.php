@@ -20,20 +20,17 @@ class PostService extends BaseService
     protected $repo_base;
     protected SubCategoryRepositoryInterface $repo_sub_category;
     protected PostIndustryRepositoryInterface $repo_post_industry;
-    protected KeywordClientService $keyword_service;
     protected $with;
 
     public function __construct(
         PostRepositoryInterface $repo_base,
         SubCategoryRepositoryInterface $repo_sub_category,
         PostIndustryRepositoryInterface $repo_post_industry,
-        KeywordClientService $keyword_service
     )
     {
         $this->repo_base = $repo_base;
         $this->repo_sub_category = $repo_sub_category;
         $this->repo_post_industry = $repo_post_industry;
-        $this->keyword_service = $keyword_service;
         $this->with = [];
     }
 
@@ -62,10 +59,6 @@ class PostService extends BaseService
 
         $text = "{$data->title}. {$data->description}";
         dispatch(new CreateKeywordJob($text, $data->id));
-//        $this->keyword_service->createKeywordWithPost([
-//            'post_id' => $data->id,
-//            'text' => $text
-//        ]);
         return [
             'code' => '200',
             'data' => $this->formatData($data)
@@ -162,6 +155,14 @@ class PostService extends BaseService
             ];
         }
         $data['lat'] = $inputs['lat'];
+
+        if(isset($data['lat']) && $data['lng']){
+            $data['location'] = [
+                'lon' => $data['lng'],
+                'lat' => $data['lat']
+            ];
+        }
+
         if(!isset($inputs['title'])){
             return [
                 'is_failed' => true,
