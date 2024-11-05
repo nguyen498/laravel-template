@@ -22,7 +22,7 @@ class NotificationRepository extends BaseRepository implements NotificationRepos
     }
 
     public function findNotificationDay (){
-        $timezone = new DateTimeZone('Asia/Ho_Chi_Minh');
+        $timezone = new \DateTimeZone('Asia/Ho_Chi_Minh');
         $now = Carbon::now()->setTimezone($timezone);
 //        $from = Carbon::now()->setTimezone($timezone)->subMinutes(4);
         $from = Carbon::now()->setTimezone($timezone);
@@ -36,7 +36,7 @@ class NotificationRepository extends BaseRepository implements NotificationRepos
     }
 
     public function findNotificationWeek (){
-        $timezone = new DateTimeZone('Asia/Ho_Chi_Minh');
+        $timezone = new \DateTimeZone('Asia/Ho_Chi_Minh');
         $now = Carbon::now()->setTimezone($timezone);
 //        $from = Carbon::now()->setTimezone($timezone)->subMinutes(4);
         $from = Carbon::now()->setTimezone($timezone);
@@ -50,7 +50,7 @@ class NotificationRepository extends BaseRepository implements NotificationRepos
     }
 
     public function findNotificationMonth(){
-        $timezone = new DateTimeZone('Asia/Ho_Chi_Minh');
+        $timezone = new \DateTimeZone('Asia/Ho_Chi_Minh');
         $now = Carbon::now()->setTimezone($timezone);
 //        $from = Carbon::now()->setTimezone($timezone)->subMinutes(4);
         $from = Carbon::now()->setTimezone($timezone);
