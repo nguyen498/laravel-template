@@ -51,7 +51,8 @@ class Notification extends Model
         'notification_type',
         'created_id',
         'created_name',
-        'user_ids'
+        'user_ids',
+        'last_run'
     ];
 
     protected $casts = [

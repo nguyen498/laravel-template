@@ -432,8 +432,8 @@ abstract class BaseService
     }
 
     public function searchElasticCache($inputs) {
-        $inputs["limit"] ?? 1000;
-        $inputs["search"] ?? "";
+        $inputs["limit"] = $inputs["limit"] ?? 1000;
+        $inputs["search"] = $inputs["search"] ?? "";
         $isSelect = $inputs["is_select"] ?? 1;
 
         $search = $this->setSearchElastic($inputs);
