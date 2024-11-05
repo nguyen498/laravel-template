@@ -307,7 +307,7 @@ class PostService extends BaseService
                     'message' => 'Job contract'
                 ];
             }
-            $data['job_contract'] = json_encode($inputs['job_contract']);
+            $data['job_contract'] = json_encode($inputs['job_contract'], JSON_UNESCAPED_UNICODE);
             if(!isset($inputs['job_time'])){
                 return [
                     'is_failed' => true,
