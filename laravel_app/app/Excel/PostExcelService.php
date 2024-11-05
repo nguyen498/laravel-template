@@ -15,6 +15,7 @@ use App\Repositories\Interfaces\PostRepositoryInterface;
 use App\Repositories\Interfaces\SubCategoryRepositoryInterface;
 use App\Utils\LogHelper;
 use Carbon\Carbon;
+use Illuminate\Support\Str;
 use Shuchkin\SimpleCSV;
 use Shuchkin\SimpleXLS;
 use Shuchkin\SimpleXLSX;
@@ -82,7 +83,7 @@ class PostExcelService
                 $code = '081';
             }
         }
-        if (!empty($file) && array_key_exists('error', $file) && $file['error'] !== UPLOAD_ERR_OK) {
+        if (!empty($file) && is_array($file) && (isset($file['error']) && $file['error'] !== UPLOAD_ERR_OK)) {
             $error = $phpFileUploadErrors[$file['error']];
         }
 
@@ -95,6 +96,11 @@ class PostExcelService
             'file' => $file,
             'extension' => $extension
         ];
+    }
+
+    private function getExtesion($name) {
+        $str_split = explode('.', $name);
+        return $str_split[count($str_split) - 1];
     }
 
     private function readExcel($file, $extension) {
@@ -195,6 +201,7 @@ class PostExcelService
     }
 
     private function processRow($rows) {
+        $user = auth()->user();
         $model = new PostImport();
         $dictCategory = $this->dictCategory();
         $dictSubCategory = $this->dictSubCategory();
@@ -207,7 +214,7 @@ class PostExcelService
                 'message' => 'Không đúng dữ liệu'
             ];
         }
-        $posts = $this->repo_base->all();
+        $posts = $this->repo_base->findAll();
         $map_post = [];
         foreach($posts as $pos) {
             if(!isset($map_post[$pos->reference])) {
@@ -221,8 +228,13 @@ class PostExcelService
 
         $insert_res = []; $update_res = [];
         $failed = [];
+        $num = count($posts) + 1;
         foreach($data as $dat) {
-            if(isset($dat['reference']) && !empty($dat['reference'])) {
+            if(isset($dat['title']) && !empty($dat['title'])) {
+                unset($dat['stt']);
+                if(isset($user)) {
+                    $dat['user_id'] = $user->id;
+                }
                 // update
                 $categoryData = $this->getCategory($dat, $dictCategory, $dat['type']);
                 $dat = $categoryData['dat'];
@@ -236,29 +248,33 @@ class PostExcelService
                 $dat = $subPostIndustry['dat'];
                 $dictPostIndustry = $subPostIndustry['dict'];
 
-                if(isset($map_post[$dat['reference']])) {
+                if(isset($dat['reference']) && isset($map_post[$dat['reference']])) {
                     $update_posts[$map_post[$dat['reference']]] = $dat;
                     array_push($update_res, [
                         'reference' => $dat['reference'],
-                        'name' => $dat['name'],
+                        'title' => $dat['title'],
                     ]);
                 } else {
+
+                    $dat['id'] = (string) Str::orderedUuid();
+                    $dat['reference'] = isset($dat['reference']) ? $dat['reference'] : $this->generateReference($num);
                     array_push($insert_posts, $dat);
                     array_push($insert_res, [
                         'reference' => $dat['reference'],
-                        'name' => $dat['name'],
+                        'title' => $dat['title'],
                     ]);
                 }
+                $num ++;
             } else {
                 array_push($failed, [
-                    'name' => $dat['name'],
+                    'title' => $dat['title'],
                     'notes' => 'Không có sản phẩm gốc'
                 ]);
             }
         }
 
         if(count($insert_posts) > 0) {
-            $this->repo_base->insertMany($insert_posts);
+            $this->repo_base->insertDBs($insert_posts);
         }
         if(count($update_posts) > 0) {
             $this->repo_base->updateMultiple($update_posts);
@@ -301,7 +317,7 @@ class PostExcelService
     private function createPostIndustry($name, $dict, $sub_category_id) {
         $now = Carbon::now();
         $pre_fix = config('enums.key_prefix.post_industry') . $now->format(config('enums.key_prefix.format_date')) . (count($dict) + 1);
-        $reference = $this->repo_post_industry->getReferenceByPrefix($pre_fix, 'reference',4, true);
+        $reference = $this->repo_post_industry->getReferenceByPrefix($pre_fix, 'reference',4, false);
         $data = $this->repo_post_industry->create([
             'name' => $name,
             'status' => PostIndustry::STATUS_ACTIVE,
@@ -328,24 +344,23 @@ class PostExcelService
     }
 
     private function createSubCategory($name, $dict, $category_id) {
-        $now = Carbon::now();
-        $pre_fix = config('enums.key_prefix.sub_category') . $now->format(config('enums.key_prefix.format_date')) . (count($dict) + 1);
-        $reference = $this->repo_category->getReferenceByPrefix($pre_fix, 'reference',4, true);
-        $data = $this->repo_category->create([
+//        $now = Carbon::now();
+//        $pre_fix = config('enums.key_prefix.sub_category') . $now->format(config('enums.key_prefix.format_date')) . (count($dict) + 1);
+//        $reference = $this->repo_sub_category->getReferenceByPrefix($pre_fix, 'reference',4, false);
+        $data = $this->repo_sub_category->create([
             'name' => $name,
             'status' => SubCategory::STATUS_ACTIVE,
-            'category_id' => $category_id,
-            'reference' => $reference
+            'category_id' => $category_id
         ]);
         $dict[$data->name] = $data->id;
         return $dict;
     }
 
-    private function getCategory($dat, $dict) {
+    private function getCategory($dat, $dict, $type = Category::HOME_OWNER) {
         if(isset($dat['category_name'])) {
             $category_name = trim($dat['category_name']);
             if(!isset($dict[$category_name]) && !empty($category_name)) {
-                $dict = $this->createCategory($category_name, $dict);
+                $dict = $this->createCategory($category_name, $dict, $type);
             }
             $dat['category_id'] = isset($dict[$category_name]) ? $dict[$category_name] : null;
             $dat['category_name'] = $category_name;
@@ -356,10 +371,10 @@ class PostExcelService
         ];
     }
 
-    private function createCategory($name, $dict, $type = Category::HOME_OWNER) {
+    private function createCategory($name, $dict, $type) {
         $now = Carbon::now();
         $pre_fix = config('enums.key_prefix.category') . $now->format(config('enums.key_prefix.format_date')) . (count($dict) + 1);
-        $reference = $this->repo_category->getReferenceByPrefix($pre_fix, 'reference',4, true);
+        $reference = $this->repo_category->getReferenceByPrefix($pre_fix, 'reference',4, false);
         $data = $this->repo_category->create([
             'name' => $name,
             'status' => Category::STATUS_ACTIVE,
@@ -370,8 +385,15 @@ class PostExcelService
         return $dict;
     }
 
+    private function generateReference($i) {
+        $now = Carbon::now();
+        $pre_fix = config('enums.key_prefix.post') . $now->format(config('enums.key_prefix.format_date'));
+        return $pre_fix . str_pad($i, 6, '0', STR_PAD_LEFT);
+//        return $this->repo_base->getReferenceByPrefix($pre_fix, 'reference',6, true);
+    }
+
     private function dictCategory(){
-        $categories = $this->repo_category->all();
+        $categories = $this->repo_category->findAll();
         $dict = [];
         foreach($categories as $cate) {
             if(!isset($dict[$cate->name])) {
@@ -382,7 +404,7 @@ class PostExcelService
     }
 
     private function dictSubCategory(){
-        $subCategories = $this->repo_sub_category->all();
+        $subCategories = $this->repo_sub_category->findAll();
         $dict = [];
         foreach($subCategories as $sub_cat) {
             if(!isset($dict[$sub_cat->name])) {
@@ -393,7 +415,7 @@ class PostExcelService
     }
 
     private function dictPostIndustry(){
-        $postIndustries = $this->repo_post_industry->all();
+        $postIndustries = $this->repo_post_industry->findAll();
         $dict = [];
         foreach($postIndustries as $post_industry) {
             if(!isset($dict[$post_industry->name])) {

@@ -3,16 +3,18 @@
 
 namespace App\Excel\Import;
 
+use Illuminate\Support\Str;
+
 class PostImport extends ExcelModel
 {
     protected $format = [
         'stt' => 'stt',
         'ma_bai_dang' => 'reference',
-        'menu_name' => 'category_name',
-        'sub_menu_name' => 'sub_category_name',
+        'ten_menu' => 'category_name',
+        'ten_sub_menu' => 'sub_category_name',
         'loai_bai_dang' => 'type', // 1: home, 2: community
         'trang_thai' => 'status',
-        'Ten_industry' => 'post_industry_name',
+        'ten_industry' => 'post_industry_name',
         'tieu_de' => 'title',
         'mo_ta' => 'description',
         'so_dien_thoai' => 'phone_number',
@@ -20,7 +22,7 @@ class PostImport extends ExcelModel
         'link_website' => 'website',
         'ten_shop' => 'store_name',
         'dia_chi_shop' => 'store_address',
-        'Longitude' => 'lng',
+        'longitude' => 'lng',
         'latitude' => 'lat',
         'khu_vuc' => 'store_area',
         'vi_tri_lam_viec' => 'work_position',
@@ -58,13 +60,13 @@ class PostImport extends ExcelModel
         $check = true;
         $this->settings = [];
         foreach($data as $dat) {
-            $key = str_slug(trim($dat), '_');
+            $key = Str::slug(trim($dat), '_');
             if(count($this->settings) < count($data)) {
                 // process special case
                 if(!isset($this->format[$key])) {
 //					$check = false;
 //					break;
-                    array_push($this->settings, "");
+                    array_push($this->settings, "NULL");
                 } else {
                     array_push($this->settings, $this->format[$key]);
                 }
@@ -76,12 +78,19 @@ class PostImport extends ExcelModel
     }
 
     public function formatSingleModel($data) {
+        $num_array = ['avg_salary', 'min_salary', 'max_salary',
+            'price', 'num_employees', 'display_type', 'status', 'type',
+            'avg_revenue', 'support', 'job_experience', 'type_salary'] ;
         $model = new PostImport();
         foreach($this->settings as $key=>$val) {
             if(!empty($val)) {
                 $value = '';
                 if(isset($data[$key])) {
-                    $value = $data[$key];
+                    if(in_array($val, $num_array)) {
+                        $value = !isset($data[$key]) || empty($data[$key]) ? 0 : $data[$key];
+                    } else {
+                        $value = $data[$key];
+                    }
                 }
                 $func = 'set'. ucwords($val);
                 $model->$func($value);
