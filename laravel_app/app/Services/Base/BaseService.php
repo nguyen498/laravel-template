@@ -9,8 +9,23 @@
 
 namespace App\Services\Base;
 
+use App\Lib\Models\GeoDistance;
+use App\Lib\Models\MustNot;
+use App\Lib\Models\Prefix;
+use App\Lib\Models\QuerySort;
+use App\Models\Product;
 use App\Utils\SqlUtil;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Cache;
+use JeroenG\Explorer\Domain\Syntax\MatchAll;
+use JeroenG\Explorer\Domain\Syntax\Matching;
+use JeroenG\Explorer\Domain\Syntax\MatchPhrase;
+use JeroenG\Explorer\Domain\Syntax\MultiMatch;
+use JeroenG\Explorer\Domain\Syntax\QueryString;
+use JeroenG\Explorer\Domain\Syntax\Range;
+use JeroenG\Explorer\Domain\Syntax\Term;
+use JeroenG\Explorer\Domain\Syntax\Terms;
+use JeroenG\Explorer\Infrastructure\Scout\ElasticEngine;
 
 abstract class BaseService
 {
@@ -373,5 +388,198 @@ abstract class BaseService
             $this->getTableName() . '.id',
             $this->getTableName() . '.reference'
         ];
+    }
+
+    public function searchElastic($inputs)
+    {
+        $inputs["limit"] ?? 1000;
+        $inputs["search"] ?? "";
+        $isSelect = $inputs["is_select"] ?? 1;
+
+        $search = $this->setSearchElastic($inputs);
+
+        if ($isSelect === 2 || $isSelect === 3) {
+            $dataRaw = $search->paginateRaw($inputs["limit"]);
+            $datasArray = [];
+            foreach ($dataRaw->items() as $i) {
+                $datasArray = $datasArray + $i["hits"]["hits"];
+            }
+
+            $datasLookup = array_map(fn($item) => array_merge(
+                $item["_source"],
+                !empty ($item['sort']) ? ['sort' => $item['sort'][0]] : []
+            ), $datasArray);
+
+            if ($isSelect === 2) {
+                $datas = $dataRaw->setCollection(collect($datasLookup));
+            } else {
+                $dataPaginate = $search->paginate($inputs["limit"]);
+                $dataArrayMer = [];
+                foreach ($dataPaginate->items() as $index => $paginateItem) {
+                    $dataArrayMer[] = array_merge($paginateItem->getAttributes(), $datasLookup[$index]);
+                }
+                $datas = $dataPaginate->setCollection(collect($dataArrayMer));
+            }
+        } else {
+            $dataPaginate = $search->paginate($inputs["limit"]);
+            $datas = $dataPaginate;
+        }
+
+        return [
+            "code" => "200",
+            "data" => $datas
+        ];
+    }
+
+    public function searchElasticCache($inputs) {
+        $inputs["limit"] ?? 1000;
+        $inputs["search"] ?? "";
+        $isSelect = $inputs["is_select"] ?? 1;
+
+        $search = $this->setSearchElastic($inputs);
+
+        $key = $inputs['key'] ?? 'product_';
+        $datasArray = [];
+        $dataRaw = $search->paginateRaw($inputs["limit"]);
+        foreach ($dataRaw->items() as $i) {
+            $datasArray = $datasArray + $i["hits"]["hits"];
+        }
+
+        if ($isSelect === 2 || $isSelect === 3) {
+            $datasLookup = array_map(fn($item) => array_merge(
+                $item["_source"],
+                !empty($item['sort']) ? ['sort' => $item['sort'][0]] : []
+            ), $datasArray);
+
+            if ($isSelect === 2) {
+                $datas = $dataRaw->setCollection(collect($datasLookup));
+            }
+            else {
+                $dataArrayMer = [];
+                $cache_keys = [];
+                foreach($datasArray as $item) {
+                    array_push($cache_keys, $key . $item['_id']);
+                }
+                $cache_keys = Cache::many($cache_keys);
+
+                foreach($datasLookup as $item) {
+                    $dat = isset($cache_keys[$key . $item['id']]) ? $cache_keys[$key . $item['id']] : null;
+                    if(isset($dat)) {
+                        $dataArrayMer[] = array_merge(json_decode($dat, true), $item);
+                    }
+
+                }
+                $datas = $dataRaw->setCollection(collect($dataArrayMer));
+            }
+        } else {
+            $dataCache = [];
+            $cache_keys = [];
+            foreach($datasArray as $item) {
+                array_push($cache_keys, $key . $item['_id']);
+            }
+            $cache_keys = Cache::many($cache_keys);
+            foreach($cache_keys as $k=>$cache) {
+                array_push($dataCache, $cache);
+            }
+
+            $datas = $dataRaw->setCollection(collect($dataCache));
+        }
+
+        return [
+            "code" => "200",
+            "data" => $datas
+        ];
+    }
+
+    private function setSearchElastic($inputs) {
+        $inputs["limit"] ?? 1000;
+        $inputs["search"] ?? "";
+        $isSelect = $inputs["is_select"] ?? 1;
+
+        $search = $this->repo_base->getModel()->search($inputs["search"]);
+        // ->take(1000)->get(); đoạn này chỉ để tự phân trang, không hoạt động với paginate
+
+        if (isset($inputs["must"])) {
+            foreach ($inputs["must"] as $item) {
+                $match = new Matching($item["field"], $item["value"], $item["fuzziness"] ?? "AUTO");
+
+                if (isset($item["analyzer"]))
+                    $match->setAnalyzer($item["analyzer"]);
+
+                $search = $search->must($match);
+            }
+        }
+
+        if (isset($inputs["match_phrase"])) {
+            $match_phrase = $inputs["match_phrase"];
+            $search = $search->must(new MatchPhrase($match_phrase['field'], $match_phrase['value']));
+        }
+
+        if (isset($inputs["match_all"])) {
+            $search = $search->must(new MatchAll());
+        }
+
+        if (isset($inputs["multi_match"])) {
+            $match = $inputs["multi_match"];
+            $search = $search->must(new MultiMatch($match["value"], $match["fields"], $match["fuzziness"] ?? "AUTO", $match["prefix_length"] ?? 0));
+        }
+
+        if (isset($inputs["terms"])) {
+            foreach ($inputs["terms"] as $term) {
+                $search = $search->should(new Terms($term["field"], $term["values"], $term["boost"] ?? 1));
+            }
+        }
+
+        if (isset($inputs["query_string"])) {
+            foreach ($inputs["query_string"] as $each) {
+                $QueryString = new QueryString(
+                    $each["query"],
+                    $each["default_operator"] ?? QueryString::OP_OR,
+                    $each["boost"] ?? 1
+                );
+                $search = $search->should($QueryString);
+            }
+        }
+        if (isset($inputs["filter"])) {
+            $filter = $inputs["filter"];
+            $search = $search->filter(new Term($filter["field"], $filter["value"], $filter["boost"] ?? 1));
+        }
+
+        if(isset($inputs["ranges"])) {
+            foreach ($inputs["ranges"] as $range)
+                $search = $search->filter(new Range($range["field"], $range["option"]));
+        }
+
+        if(isset($inputs["prefix"])) {
+            foreach ($inputs["prefix"] as $item)
+                $search = $search->filter(new Prefix($item["field"], $item["value"]));
+        }
+
+        if (isset($inputs["geo_distance"])) {
+            $geo = $inputs["geo_distance"];
+            $search = $search->filter(new GeoDistance(
+                $geo["distance"],
+                $geo["lat"],
+                $geo["lng"],
+                $geo["distance_type"] ?? GeoDistance::DISTANCE_TYPE_ARC,
+                $geo["field"] ?? GeoDistance::DEFAULT_FIELD
+            ));
+        }
+
+        if (isset($inputs["sort"])) {
+            $sort = $inputs["sort"];
+            $search = $search->property(new QuerySort($sort));
+        }
+
+        if(isset($inputs["must_not"])) {
+            $array = [];
+            foreach ($inputs["must_not"] as $item) {
+                $array[] = new Matching($item["field"], $item["value"]);
+            }
+            $boolQuery = new MustNot();
+            $boolQuery->addMany("must_not", $array);
+            $search = $search->newCompound($boolQuery );
+        }
+        return $search;
     }
 }
