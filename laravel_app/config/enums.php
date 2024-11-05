@@ -15,6 +15,7 @@ return [
         'category'=> 'CAT',
         'sub_category'=> 'CATSUB',
         'post_industry'=> 'POSIND',
+        'post'=> 'POS',
     ],
     'notification' => [
         'prefix' => 'NOTI',

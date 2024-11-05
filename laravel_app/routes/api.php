@@ -32,6 +32,7 @@ use App\Http\Controllers\Api\OneSignalApiController;
 use App\Http\Controllers\Api\PostApiController;
 use App\Http\Controllers\Api\PostIndustryApiController;
 use App\Http\Controllers\Api\PostAdvertisingApiController;
+use App\Http\Controllers\Api\PostExcelApiController;
 
 
 Route::prefix("auth")->group(function () {
@@ -318,15 +319,20 @@ Route::group(['prefix' => 'v1'], function () {
         Route::post('/search', [UserSearchApiController::class, 'search']);
     });
 
-    Route::group(['prefix' => 'posts', 'middleware' => ['auth:users']], function(){
-        Route::get('/findAll', [PostApiController::class, 'findAll']);
-        Route::post('/store', [PostApiController::class, 'store']);
-        Route::put('/update/{id}', [PostApiController::class, 'update']);
-        Route::get('/findById/{id}', [PostApiController::class, 'findById']);
-        Route::delete('/destroy/{id}', [PostApiController::class, 'destroy']);
-        Route::post('/search', [PostApiController::class, 'search']);
+    Route::group(['prefix' => 'posts'], function(){
+        Route::group(['middleware' => ['auth:users']], function(){
+            Route::get('/findAll', [PostApiController::class, 'findAll']);
+            Route::post('/store', [PostApiController::class, 'store']);
+            Route::put('/update/{id}', [PostApiController::class, 'update']);
+            Route::get('/findById/{id}', [PostApiController::class, 'findById']);
+            Route::delete('/destroy/{id}', [PostApiController::class, 'destroy']);
+            Route::post('/search', [PostApiController::class, 'search']);
+            Route::post('/searchElastic', [PostApiController::class, 'searchElastic']);
+        });
 
-        Route::post('/searchElastic', [PostApiController::class, 'searchElastic']);
+        Route::group(['middleware' => ['auth:employees']], function(){
+            Route::post('/import', [PostExcelApiController::class, 'import']);
+        });
     });
 
     Route::group(['prefix' => 'post_industries'], function(){
