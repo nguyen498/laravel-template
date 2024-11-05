@@ -2,11 +2,14 @@
 
 namespace App\Services;
 
+use App\Jobs\CreateKeywordJob;
+use App\Jobs\DeleteKeywordJob;
 use App\Models\Post;
 use App\Repositories\Interfaces\PostIndustryRepositoryInterface;
 use App\Repositories\Interfaces\PostRepositoryInterface;
 use App\Repositories\Interfaces\SubCategoryRepositoryInterface;
 use App\Services\Base\BaseService;
+use App\Services\Client\KeywordClientService;
 use App\Utils\StringHelpers;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
@@ -17,17 +20,20 @@ class PostService extends BaseService
     protected $repo_base;
     protected SubCategoryRepositoryInterface $repo_sub_category;
     protected PostIndustryRepositoryInterface $repo_post_industry;
+    protected KeywordClientService $keyword_service;
     protected $with;
 
     public function __construct(
         PostRepositoryInterface $repo_base,
         SubCategoryRepositoryInterface $repo_sub_category,
-        PostIndustryRepositoryInterface $repo_post_industry
+        PostIndustryRepositoryInterface $repo_post_industry,
+        KeywordClientService $keyword_service
     )
     {
         $this->repo_base = $repo_base;
         $this->repo_sub_category = $repo_sub_category;
         $this->repo_post_industry = $repo_post_industry;
+        $this->keyword_service = $keyword_service;
         $this->with = [];
     }
 
@@ -51,29 +57,15 @@ class PostService extends BaseService
         $input_data = $validate['inputs'];
         $input_data['user_id'] = $user->id;
 
-        $sub_category = $this->repo_sub_category->findById($input_data['sub_category_id'], ['category']);
-        if(!isset($sub_category)){
-            return [
-                'is_failed' => true,
-                'code' => '004',
-                'message' => 'Sub category'
-            ];
-        }
-
-        $input_data['sub_category_name'] = $sub_category->name;
-        $input_data['category_id'] = $sub_category->category->id;
-        $input_data['category_name'] = $sub_category->category->name;
-
-        $post_industry = $this->repo_post_industry->findOneBy([
-           'sub_category_id' => $input_data['sub_category_id']
-        ]);
-        if(isset($post_industry)){
-            $input_data['post_industry_id'] = $post_industry->id;
-            $input_data['post_industry_name'] = $post_industry->title;
-        }
-
         $data = $this->repo_base->create($input_data);
         $data = $this->repo_base->findById($data->id, $this->with);
+
+        $text = "{$data->title}. {$data->description}";
+        dispatch(new CreateKeywordJob($text, $data->id));
+//        $this->keyword_service->createKeywordWithPost([
+//            'post_id' => $data->id,
+//            'text' => $text
+//        ]);
         return [
             'code' => '200',
             'data' => $this->formatData($data)
@@ -99,30 +91,10 @@ class PostService extends BaseService
             ];
         }
 
-        $sub_category = $this->repo_sub_category->findById($input_data['sub_category_id'], ['category']);
-        if(!isset($sub_category)){
-            return [
-                'is_failed' => true,
-                'code' => '004',
-                'message' => 'Sub category'
-            ];
-        }
-
-        $input_data['sub_category_name'] = $sub_category->name;
-        $input_data['category_id'] = $sub_category->category->id;
-        $input_data['category_name'] = $sub_category->category->name;
-
-        $post_industry = $this->repo_post_industry->findOneBy([
-            'sub_category_id' => $input_data['sub_category_id']
-        ]);
-        if(isset($post_industry)){
-            $input_data['post_industry_id'] = $post_industry->id;
-            $input_data['post_industry_name'] = $post_industry->title;
-        }
-
-
         $this->repo_base->update($id, $input_data);
         $data = $this->repo_base->findById($data->id, $this->with);
+        $text = "{$data->title}. {$data->description}";
+        dispatch(new CreateKeywordJob($text, $data->id));
         return [
             'code' => '200',
             'data' => $this->formatData($data)
@@ -145,6 +117,7 @@ class PostService extends BaseService
             ];
         }
 
+        dispatch(new DeleteKeywordJob($data->id));
         $data->delete();
 
         return [
@@ -198,14 +171,14 @@ class PostService extends BaseService
         }
         $data['title'] = $inputs['title'];
 
-        if(!isset($inputs['phone'])){
+        if(!isset($inputs['phone_number'])){
             return [
                 'is_failed' => true,
                 'code' => '003',
                 'message' => 'phone'
             ];
         }
-        $data['phone'] = $inputs['phone'];
+        $data['phone_number'] = $inputs['phone_number'];
 
         if(!isset($inputs['email'])){
             return [
@@ -248,6 +221,27 @@ class PostService extends BaseService
             ];
         }
         $data['sub_category_id'] = $inputs['sub_category_id'];
+
+        $sub_category = $this->repo_sub_category->findById($data['sub_category_id'], ['category']);
+        if(!isset($sub_category)){
+            return [
+                'is_failed' => true,
+                'code' => '004',
+                'message' => 'Sub category'
+            ];
+        }
+
+        $data['sub_category_name'] = $sub_category->name;
+        $data['category_id'] = $sub_category->category->id;
+        $data['category_name'] = $sub_category->category->name;
+
+        $post_industry = $this->repo_post_industry->findOneBy([
+            'sub_category_id' => $data['sub_category_id']
+        ]);
+        if(isset($post_industry)){
+            $data['post_industry_id'] = $post_industry->id;
+            $data['post_industry_name'] = $post_industry->title;
+        }
 
         if(!isset($inputs['type'])){
             return [
@@ -635,6 +629,7 @@ class PostService extends BaseService
         if(!isset($id)) {
             $data['reference'] = $this->generateReference($reference);
         }
+        $data['description'] = $inputs['description'];
         return [
             'is_failed' => false,
             'inputs' => $data
