@@ -6,10 +6,14 @@ use App\Traits\UuidTrait;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use JeroenG\Explorer\Application\Aliased;
+use JeroenG\Explorer\Application\Explored;
+use JeroenG\Explorer\Application\IndexSettings;
+use Laravel\Scout\Searchable;
 
-class Post extends Model
+class Post extends Model implements Explored, IndexSettings, Aliased
 {
-    use HasFactory, SoftDeletes, UuidTrait;
+    use HasFactory, SoftDeletes, UuidTrait, Searchable;
     const pre_fix = 'POST';
 
     //type
@@ -81,6 +85,7 @@ class Post extends Model
         'avg_revenue',
         'support',
         'additional_infor',
+        'location'
     ];
 
     /**
@@ -95,6 +100,7 @@ class Post extends Model
         'status' => 'integer',
         'support' => 'integer',
         'display_type' => 'integer',
+        'location' => 'json'
         // Add other casts as needed
     ];
 
@@ -141,5 +147,121 @@ class Post extends Model
     public function postIndustry()
     {
         return $this->belongsTo(PostIndustry::class);
+    }
+
+    public function searchableAs()
+    {
+        return 'posts_index';
+    }
+
+    public function mappableAs(): array
+    {
+        return [
+            'id' => 'keyword',
+            'title' => [
+                'type' => 'keyword',
+            ],
+            'description' => [
+                'type' => 'text',
+                'analyzer' => 'post_analyzer',
+            ],
+            "location" => [
+                'type' => 'geo_point',
+            ],
+            'created_at' => 'date',
+        ];
+    }
+
+    public function indexSettings(): array
+    {
+        return [
+            'index' => [
+                'number_of_shards' => 2,
+            ],
+            'analysis' => [
+                "char_filter" => [
+                    "vi_char_filter" => [
+                        "type" => "mapping",
+                        "mappings" => [
+                            "á => a",
+                            "à => a",
+                            "ả => a",
+                            "ã => a",
+                            "ạ => a",
+                            "ă => a",
+                            "ắ => a",
+                            "ằ => a",
+                            "ẳ => a",
+                            "ẵ => a",
+                            "ặ => a",
+                            "â => a",
+                            "ấ => a",
+                            "ầ => a",
+                            "ẩ => a",
+                            "ẫ => a",
+                            "ậ => a",
+                            "é => e",
+                            "è => e",
+                            "ẻ => e",
+                            "ẽ => e",
+                            "ẹ => e",
+                            "ê => e",
+                            "ế => e",
+                            "ề => e",
+                            "ể => e",
+                            "ễ => e",
+                            "ệ => e",
+                            "í => i",
+                            "ì => i",
+                            "ỉ => i",
+                            "ĩ => i",
+                            "ị => i",
+                            "ó => o",
+                            "ò => o",
+                            "ỏ => o",
+                            "õ => o",
+                            "ọ => o",
+                            "ô => o",
+                            "ố => o",
+                            "ồ => o",
+                            "ổ => o",
+                            "ỗ => o",
+                            "ộ => o",
+                            "ơ => o",
+                            "ớ => o",
+                            "ờ => o",
+                            "ở => o",
+                            "ỡ => o",
+                            "ợ => o",
+                            "ú => u",
+                            "ù => u",
+                            "ủ => u",
+                            "ũ => u",
+                            "ụ => u",
+                            "ư => u",
+                            "ứ => u",
+                            "ừ => u",
+                            "ử => u",
+                            "ữ => u",
+                            "ự => u",
+                            "ý => y",
+                            "ỳ => y",
+                            "ỷ => y",
+                            "ỹ => y",
+                            "ỵ => y",
+                            "đ => d",
+                        ],
+                    ]
+                ],
+                "analyzer" => [
+                    "post_analyzer" => [
+                        "type" => "custom",
+                        "tokenizer" => "vi_tokenizer",
+                        "char_filter" => ["vi_char_filter"],
+                        "filter" => ["lowercase"],
+                    ]
+                ],
+            ],
+        ];
     }
 }

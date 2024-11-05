@@ -1,5 +1,7 @@
 <?php
 
+use App\Models\Category;
+
 return [
 
     /*
@@ -16,7 +18,7 @@ return [
     |
     */
 
-    'driver' => env('SCOUT_DRIVER', 'algolia'),
+    'driver' => env('SCOUT_DRIVER', 'meilisearch'),
 
     /*
     |--------------------------------------------------------------------------
@@ -43,7 +45,6 @@ return [
     */
 
     'queue' => env('SCOUT_QUEUE', false),
-
     /*
     |--------------------------------------------------------------------------
     | Database Transactions
@@ -134,12 +135,13 @@ return [
         'host' => env('MEILISEARCH_HOST', 'http://localhost:7700'),
         'key' => env('MEILISEARCH_KEY'),
         'index-settings' => [
-            User::class => [
-                'filterableAttributes' => ['id', 'name', 'email'],
+            Category::class => [
+                'filterableAttributes' => ['name', 'description'],
                 'sortableAttributes' => ['created_at'],
             ],
         ],
     ],
+
 
     /*
     |--------------------------------------------------------------------------
