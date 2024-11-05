@@ -13,6 +13,8 @@ return [
     'key_prefix' => [
         'format_date'=> 'ymd',
         'category'=> 'CAT',
+        'sub_category'=> 'CATSUB',
+        'post_industry'=> 'POSIND',
     ],
     'notification' => [
         'prefix' => 'NOTI',

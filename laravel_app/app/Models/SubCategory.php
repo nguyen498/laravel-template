@@ -12,6 +12,10 @@ class SubCategory extends Model
 
     protected $table = 'sub_categories';
 
+    // status
+    const STATUS_UNACTIVE   = 0;
+    const STATUS_ACTIVE     = 1;
+
     protected $primaryKey = 'id';
     public $incrementing = false; // No auto-increment for UUID
     protected $keyType = 'string'; // Set key type to string

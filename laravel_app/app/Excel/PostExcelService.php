@@ -7,6 +7,8 @@ namespace App\Excel;
 use App\Excel\Import\PostImport;
 use App\Models\Category;
 use App\Models\Post;
+use App\Models\PostIndustry;
+use App\Models\SubCategory;
 use App\Repositories\Interfaces\CategoryRepositoryInterface;
 use App\Repositories\Interfaces\PostIndustryRepositoryInterface;
 use App\Repositories\Interfaces\PostRepositoryInterface;
@@ -222,13 +224,121 @@ class PostExcelService
         foreach($data as $dat) {
             if(isset($dat['reference']) && !empty($dat['reference'])) {
                 // update
+                $categoryData = $this->getCategory($dat, $dictCategory, $dat['type']);
+                $dat = $categoryData['dat'];
+                $dictCategory = $categoryData['dict'];
+
+                $subCategoryData = $this->getSubCategory($dat, $dictSubCategory, $dat['category_id']);
+                $dat = $subCategoryData['dat'];
+                $dictSubCategory = $subCategoryData['dict'];
+
+                $subPostIndustry = $this->getPostIndustry($dat, $dictPostIndustry, $dat['sub_category_id']);
+                $dat = $subPostIndustry['dat'];
+                $dictPostIndustry = $subPostIndustry['dict'];
+
                 if(isset($map_post[$dat['reference']])) {
-                    $categoryData = $this->getCategory($dat, $dictCategory);
-                    $dat = $categoryData['dat'];
-                    $dictCategory = $categoryData['dict'];
+                    $update_posts[$map_post[$dat['reference']]] = $dat;
+                    array_push($update_res, [
+                        'reference' => $dat['reference'],
+                        'name' => $dat['name'],
+                    ]);
+                } else {
+                    array_push($insert_posts, $dat);
+                    array_push($insert_res, [
+                        'reference' => $dat['reference'],
+                        'name' => $dat['name'],
+                    ]);
                 }
+            } else {
+                array_push($failed, [
+                    'name' => $dat['name'],
+                    'notes' => 'Không có sản phẩm gốc'
+                ]);
             }
         }
+
+        if(count($insert_posts) > 0) {
+            $this->repo_base->insertMany($insert_posts);
+        }
+        if(count($update_posts) > 0) {
+            $this->repo_base->updateMultiple($update_posts);
+        }
+
+        return [
+            'is_failed' => false,
+            'data' => [
+                'insert' => [
+                    'total' => count($insert_posts)
+                ],
+                'update' => [
+                    'total' => count($update_posts),
+                    'data' => $update_res
+                ],
+                'failed' => [
+                    'total' => count($failed),
+                    'data' => $failed
+                ]
+            ]
+        ];
+
+    }
+
+    private function getPostIndustry($dat, $dict, $sub_category_id) {
+        if(isset($dat['post_industry_name'])) {
+            $post_industry_name = trim($dat['post_industry_name']);
+            if(!isset($dict[$post_industry_name]) && !empty($post_industry_name)) {
+                $dict = $this->createPostIndustry($post_industry_name, $dict, $sub_category_id);
+            }
+            $dat['post_industry_id'] = isset($dict[$post_industry_name]) ? $dict[$post_industry_name] : null;
+            $dat['post_industry_name'] = $post_industry_name;
+        }
+        return [
+            'dat' => $dat,
+            'dict' => $dict
+        ];
+    }
+
+    private function createPostIndustry($name, $dict, $sub_category_id) {
+        $now = Carbon::now();
+        $pre_fix = config('enums.key_prefix.post_industry') . $now->format(config('enums.key_prefix.format_date')) . (count($dict) + 1);
+        $reference = $this->repo_post_industry->getReferenceByPrefix($pre_fix, 'reference',4, true);
+        $data = $this->repo_post_industry->create([
+            'name' => $name,
+            'status' => PostIndustry::STATUS_ACTIVE,
+            'sub_category_id' => $sub_category_id,
+            'reference' => $reference
+        ]);
+        $dict[$data->name] = $data->id;
+        return $dict;
+    }
+
+    private function getSubCategory($dat, $dict, $category_id) {
+        if(isset($dat['sub_category_name'])) {
+            $sub_category_name = trim($dat['sub_category_name']);
+            if(!isset($dict[$sub_category_name]) && !empty($sub_category_name)) {
+                $dict = $this->createSubCategory($sub_category_name, $dict, $category_id);
+            }
+            $dat['sub_category_id'] = isset($dict[$sub_category_name]) ? $dict[$sub_category_name] : null;
+            $dat['sub_category_name'] = $sub_category_name;
+        }
+        return [
+            'dat' => $dat,
+            'dict' => $dict
+        ];
+    }
+
+    private function createSubCategory($name, $dict, $category_id) {
+        $now = Carbon::now();
+        $pre_fix = config('enums.key_prefix.sub_category') . $now->format(config('enums.key_prefix.format_date')) . (count($dict) + 1);
+        $reference = $this->repo_category->getReferenceByPrefix($pre_fix, 'reference',4, true);
+        $data = $this->repo_category->create([
+            'name' => $name,
+            'status' => SubCategory::STATUS_ACTIVE,
+            'category_id' => $category_id,
+            'reference' => $reference
+        ]);
+        $dict[$data->name] = $data->id;
+        return $dict;
     }
 
     private function getCategory($dat, $dict) {
