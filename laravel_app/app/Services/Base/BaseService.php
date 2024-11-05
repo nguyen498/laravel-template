@@ -13,7 +13,6 @@ use App\Lib\Models\GeoDistance;
 use App\Lib\Models\MustNot;
 use App\Lib\Models\Prefix;
 use App\Lib\Models\QuerySort;
-use App\Models\Product;
 use App\Utils\SqlUtil;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
