@@ -13,7 +13,7 @@ if [ "$role" = "app" ]; then
   exec apache2-foreground
 elif [ "$role" = "queue" ]; then
   echo "Running the queue..."
-  php /var/www/laravel_app/artisan queue:work --queue=high,kitchen,medium,low,default --verbose --tries=3 --timeout=90
+  php /var/www/laravel_app/artisan queue:work --queue=high,medium,low,default --verbose --tries=3 --timeout=90
 #    echo "Running kafka"
 #    php /var/www/laravel_app/artisan command:running_kafka
 elif [ "$role" = "scheduler" ]; then

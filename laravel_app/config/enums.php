@@ -10,6 +10,10 @@ return [
         'user' => 10,
         'employee' => 10,
     ],
+    'key_prefix' => [
+        'format_date'=> 'ymd',
+        'category'=> 'CAT',
+    ],
     'notification' => [
         'prefix' => 'NOTI',
         'retry' => 3,

@@ -15,11 +15,17 @@ class Category extends Model
     const HOME_OWNER = 1;
     const COMMUNITY = 2;
 
+    // status
+    const STATUS_UNACTIVE   = 0;
+    const STATUS_ACTIVE     = 1;
+
     protected $table = 'categories';
 
     protected $primaryKey = 'id';
     public $incrementing = false; // No auto-increment for UUID
     protected $keyType = 'string'; // Set key type to string
+
+
 
     protected $fillable = [
         'id',
