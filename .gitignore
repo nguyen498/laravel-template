@@ -19,3 +19,4 @@ nginx-proxy-manager
 #/.idea
 #/.vscode
 *.DS_Store
+redisdata
