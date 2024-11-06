@@ -22,6 +22,7 @@ class UserInboxService extends BaseService
     protected $repo_base;
     protected $repo_notification;
     protected $service_send_notification;
+    protected $with;
 
     public function __construct(
         UserInboxRepositoryInterface $repo_base,
@@ -31,11 +32,12 @@ class UserInboxService extends BaseService
         $this->repo_base                    = $repo_base;
         $this->repo_notification            = $repo_notification;
         $this->service_send_notification    = $service_send_notification;
+        $this->with                         = [];
     }
 
     public function getModelName()
     {
-        return 'Hộp thư';
+        return 'Inbox';
     }
 
     public function getTableName()
@@ -43,63 +45,70 @@ class UserInboxService extends BaseService
         return (new UserInbox())->getTable();
     }
 
-    public function searchApp($inputs) {
-        $this->is_app = true;
-        $auth = $this->getAuthInputs($inputs);
-        $inputs['filter']['user_id'] = $auth['user_id'];
-        $inputs['filter']['user_type'] = $auth['user_type'];
-        return $this->search($inputs);
-    }
+//    public function searchApp($inputs) {
+//        $this->is_app = true;
+//        $auth = $this->getAuthInputs($inputs);
+//        $inputs['filter']['user_id'] = $auth['user_id'];
+//        $inputs['filter']['user_type'] = $auth['user_type'];
+//        return $this->search($inputs);
+//    }
 
-    public function updateReadByUser($inputs) {
-        $inputs = $this->getAuthInputs($inputs);
-        $input_conds = [
-            'user_id' => $inputs['user_id'],
-            'user_type' => $inputs['user_type'],
-            'read_status' => UserInbox::READ_STATUS_NOT_READ
-        ];
-        $ids = [];
-        if(isset($inputs['ids']) && count($inputs['ids']) > 0){
-            $ids = $inputs['ids'];
+    public function updateRead($id, $inputs) {
+        $user = Auth::user();
+        $data = $this->repo_base->findOneBy([
+            'user_id' => $user->id,
+            'id' => $id
+        ]);
+        if (!isset($data)) {
+            return ['code' => '004', 'message' => $this->getModelName()];
         }
-        $datas = $this->repo_base->findByIdAndType($ids, $input_conds, ['id', 'user_id']);
-        if(count($datas) >0) {
-            $ids = [];
-            foreach($datas as $dat) {
-                array_push($ids, $dat->id);
-            }
-            $this->repo_base->updateDBs($ids, ['read_status' => UserInbox::READ_STATUS_READ]);
+        if(!isset($inputs['read_status'])){
+            return [ 'code' => '003', 'message' => 'status' ];
         }
+        $this->repo_base->update($id, $inputs);
 
         return [
             'code' => '200',
+            'data' => [],
             'message' => 'update successful'
         ];
     }
 
-    public function deleteByUser($inputs) {
-        $inputs = $this->getAuthInputs($inputs);
-        $input_conds = [
-            'user_id' => $inputs['user_id'],
-            'user_type' => $inputs['user_type']
-        ];
-        $ids = [];
-        if(isset($inputs['ids']) && count($inputs['ids']) > 0){
-            $ids = $inputs['ids'];
+    public function deleteInbox($id) {
+        $user = Auth::user();
+        $data = $this->repo_base->findOneBy([
+            'user_id' => $user->id,
+            'id' => $id
+        ]);
+        if (!isset($data)) {
+            return ['code' => '004', 'message' => $this->getModelName()];
         }
-        $datas = $this->repo_base->findByIdAndType($ids, $input_conds, ['id', 'user_id']);
-        if(count($datas) >0) {
-            $ids = [];
-            foreach($datas as $dat) {
-                array_push($ids, $dat->id);
-            }
-            $this->repo_base->deleteByIds($ids);
-        }
+        $this->repo_base->delete($id);
 
         return [
             'code' => '200',
+            'data' => [],
             'message' => 'delete successful'
         ];
+    }
+
+    public function updateReadAll() {
+        $user = Auth::user();
+        UserInbox::where('user_id', $user->id)
+            ->where('read_status', UserInbox::READ_STATUS_NOT_READ)
+            ->update(['read_status' => UserInbox::READ_STATUS_READ]);
+
+        return [
+            'code' => '200',
+            'data' => [],
+            'message' => 'update successful'
+        ];
+    }
+
+    public function searchApp($inputs){
+        $user = Auth::user();
+        $inputs['filter']['user_id'] = $user->id;
+        return $this->search($inputs);
     }
 
     public function sendCommentNotificationToPostOwner($inputs){
@@ -223,7 +232,7 @@ class UserInboxService extends BaseService
                 'title' => $inbox->title
             ]);
             // delete after finished
-            $this->repo_base->delete($inbox->id);
+//            $this->repo_base->delete($inbox->id);
         }
     }
 
@@ -247,42 +256,6 @@ class UserInboxService extends BaseService
             $data->status = UserInbox::STATUS_SEND_FAILED;
             $data->update();
         }
-        return $data;
-    }
-
-    private function generatePassengerTitle($type, $auth) {
-        switch ($type) {
-            case UserInbox::TYPE_PASSENGER_CONFIRM_TRIP:
-                return config('inbox_message.title.passenger.trip.confirm');
-            case UserInbox::TYPE_PASSENGER_FINISHED_TRIP:
-                return config('inbox_message.title.passenger.trip.finished');
-            case UserInbox::TYPE_PASSENGER_INSURANCE_TRIP:
-                return config('inbox_message.title.passenger.trip.trip_insurance');
-        }
-        return null;
-    }
-
-    private function generatePassengerContent($type, $data, $auth) {
-        switch ($type) {
-            case UserInbox::TYPE_PASSENGER_FINISHED_TRIP:
-                return config('inbox_message.message.passenger.trip.finished');
-            case UserInbox::TYPE_PASSENGER_INSURANCE_TRIP:
-                $reference = isset($data['trip']['reference']) ? $data['trip']['reference'] : '';
-                if(isset($data['trip']['trip_reference'])) {
-                    $reference = $data['trip']['trip_reference'];
-                }
-                return sprintf(config('inbox_message.message.passenger.trip.trip_insurance'),
-//                    $reference,
-                    isset($data['trip']['req_code']) ? $data['trip']['req_code'] : '');
-        }
-        return null;
-    }
-
-    private function generateDataTrip($trip, $type) {
-        $data = [
-            'trip' => $trip,
-            'type' => $type
-        ];
         return $data;
     }
 
@@ -322,25 +295,8 @@ class UserInboxService extends BaseService
         return null;
     }
 
-    private function generateTitleChatSupport($user_type) {
-        switch ($user_type) {
-            case PolymorphyMap::USER:
-                return config('inbox_message.title.support.passenger');
-        }
-        return null;
-    }
-
-    private function generateContentChatSupport($user_type, $title) {
-        switch ($user_type) {
-            case PolymorphyMap::USER:
-                return sprintf(config('inbox_message.message.support.passenger'), $title);
-        }
-        return null;
-    }
-
     public function checkInputs($inputs, $id)
     {
-        $inputs = $this->getAuthInputs($inputs);
         if (!isset($inputs['support_id'])) {
             return ['is_failed' => true, 'code' => '003', 'message' => 'Hỗ trợ'];
         }
@@ -418,26 +374,19 @@ class UserInboxService extends BaseService
         ];
     }
 
-    private function getAuthInputs($inputs) {
-        $auth = Auth::guard('users')->user();
-        // auth by user
-        if(isset($auth)) {
-            $inputs['user_id'] = $auth->id;
-            $inputs['user_type'] = PolymorphyMap::USER;
-        } else {
-            $auth = Auth::guard('employees')->user();
-            if(isset($auth)) {
-                $inputs['user_id'] = $auth->id;
-                $inputs['user_type'] = PolymorphyMap::EMPLOYEE;
-            }
-        }
-
-//        if(isset($auth['phone'])) {
-//            $inputs['phone'] = $auth['phone'];
+//    private function getAuthInputs($inputs) {
+//        $auth = Auth::guard('users')->user();
+//        // auth by user
+//        if(isset($auth)) {
+//            $inputs['user_id'] = $auth->id;
+//            $inputs['user_type'] = PolymorphyMap::USER;
+//        } else {
+//            $auth = Auth::guard('employees')->user();
+//            if(isset($auth)) {
+//                $inputs['user_id'] = $auth->id;
+//                $inputs['user_type'] = PolymorphyMap::EMPLOYEE;
+//            }
 //        }
-//        if(isset($auth['name'])) {
-//            $inputs['name'] = $auth['name'];
-//        }
-        return $inputs;
-    }
+//        return $inputs;
+//    }
 }

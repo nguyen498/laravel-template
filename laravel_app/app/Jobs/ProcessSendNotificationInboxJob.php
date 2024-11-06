@@ -57,7 +57,5 @@ class ProcessSendNotificationInboxJob implements ShouldQueue
             LogHelper::writeLog('issued on process send user inbox notification '  . $e->getMessage() .PHP_EOL. json_encode($e->getTrace()), 0);
         }
 
-        // release job
-//        $this->release();
     }
 }

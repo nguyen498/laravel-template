@@ -4,6 +4,7 @@
 namespace App\Excel;
 
 
+use App\Constants\QueueMap;
 use App\Excel\Import\PostImport;
 use App\Jobs\CreateKeywordJob;
 use App\Models\Category;
@@ -284,7 +285,7 @@ class PostExcelService
                     $post->searchable();
 
                     $text = "{$insert_post['title']}. {$insert_post['description']}";
-                    dispatch(new CreateKeywordJob($text, $insert_post['id']));
+                    dispatch((new CreateKeywordJob($text, $insert_post['id']))->onQueue(QueueMap::QUEUE_GENERATE_KEYWORD));
                 }
             }
         }
@@ -297,7 +298,7 @@ class PostExcelService
                     $post->searchable();
 
                     $text = "{$update_post['title']}. {$update_post['description']}";
-                    dispatch(new CreateKeywordJob($text, $post->id));
+                    dispatch((new CreateKeywordJob($text, $post->id))->onQueue(QueueMap::QUEUE_GENERATE_KEYWORD));
                 }
             }
         }

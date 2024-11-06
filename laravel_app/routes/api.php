@@ -287,12 +287,19 @@ Route::group(['prefix' => 'v1'], function () {
     });
 
     Route::group(['prefix' => 'user_inboxes'], function(){
-        Route::get('/findAll', [UserInboxApiController::class, 'findAll']);
-        Route::post('/store', [UserInboxApiController::class, 'store']);
-        Route::put('/update/{id}', [UserInboxApiController::class, 'update']);
-        Route::get('/findById/{id}', [UserInboxApiController::class, 'findById']);
-        Route::delete('/destroy/{id}', [UserInboxApiController::class, 'destroy']);
-        Route::post('/search', [UserInboxApiController::class, 'search']);
+//        Route::get('/findAll', [UserInboxApiController::class, 'findAll']);
+//        Route::post('/store', [UserInboxApiController::class, 'store']);
+//        Route::put('/update/{id}', [UserInboxApiController::class, 'update']);
+//        Route::get('/findById/{id}', [UserInboxApiController::class, 'findById']);
+//        Route::delete('/destroy/{id}', [UserInboxApiController::class, 'destroy']);
+//        Route::post('/search', [UserInboxApiController::class, 'search']);
+
+        Route::group(['middleware' => ['auth:users']], function(){
+            Route::put('/update_read/{id}', [UserInboxApiController::class, 'updateRead']);
+            Route::post('/update_read_all', [UserInboxApiController::class, 'updateReadAll']);
+            Route::delete('/delete_inbox/{id}', [UserInboxApiController::class, 'deleteInbox']);
+            Route::post('searchApp', [UserInboxApiController::class, 'searchApp']);
+        });
     });
 
     Route::group(['prefix' => 'user_medias'], function(){

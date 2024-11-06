@@ -31,8 +31,8 @@ class UserInbox extends Model
     const COMMENT_TYPE_WITHOUT_COMMENT      = 1;
     const COMMENT_TYPE_COMMENT              = 2;
     // read status
-    const READ_STATUS_NOT_READ              = 1;
-    const READ_STATUS_READ                  = 2;
+    const READ_STATUS_NOT_READ              = 0;
+    const READ_STATUS_READ                  = 1;
 
     protected $fillable = [
         'id',

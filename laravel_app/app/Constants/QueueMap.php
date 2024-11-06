@@ -9,4 +9,5 @@ class QueueMap
     const QUEUE_USER_INBOX              = 'high';
     const QUEUE_NOTIFICATION            = 'low';
     const QUEUE_TELEGRAM                = 'medium';
+    const QUEUE_GENERATE_KEYWORD        = 'low';
 }
