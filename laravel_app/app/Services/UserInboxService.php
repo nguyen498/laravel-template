@@ -295,25 +295,8 @@ class UserInboxService extends BaseService
         return null;
     }
 
-    private function generateTitleChatSupport($user_type) {
-        switch ($user_type) {
-            case PolymorphyMap::USER:
-                return config('inbox_message.title.support.passenger');
-        }
-        return null;
-    }
-
-    private function generateContentChatSupport($user_type, $title) {
-        switch ($user_type) {
-            case PolymorphyMap::USER:
-                return sprintf(config('inbox_message.message.support.passenger'), $title);
-        }
-        return null;
-    }
-
     public function checkInputs($inputs, $id)
     {
-        $inputs = $this->getAuthInputs($inputs);
         if (!isset($inputs['support_id'])) {
             return ['is_failed' => true, 'code' => '003', 'message' => 'Hỗ trợ'];
         }
@@ -391,26 +374,19 @@ class UserInboxService extends BaseService
         ];
     }
 
-    private function getAuthInputs($inputs) {
-        $auth = Auth::guard('users')->user();
-        // auth by user
-        if(isset($auth)) {
-            $inputs['user_id'] = $auth->id;
-            $inputs['user_type'] = PolymorphyMap::USER;
-        } else {
-            $auth = Auth::guard('employees')->user();
-            if(isset($auth)) {
-                $inputs['user_id'] = $auth->id;
-                $inputs['user_type'] = PolymorphyMap::EMPLOYEE;
-            }
-        }
-
-//        if(isset($auth['phone'])) {
-//            $inputs['phone'] = $auth['phone'];
+//    private function getAuthInputs($inputs) {
+//        $auth = Auth::guard('users')->user();
+//        // auth by user
+//        if(isset($auth)) {
+//            $inputs['user_id'] = $auth->id;
+//            $inputs['user_type'] = PolymorphyMap::USER;
+//        } else {
+//            $auth = Auth::guard('employees')->user();
+//            if(isset($auth)) {
+//                $inputs['user_id'] = $auth->id;
+//                $inputs['user_type'] = PolymorphyMap::EMPLOYEE;
+//            }
 //        }
-//        if(isset($auth['name'])) {
-//            $inputs['name'] = $auth['name'];
-//        }
-        return $inputs;
-    }
+//        return $inputs;
+//    }
 }
