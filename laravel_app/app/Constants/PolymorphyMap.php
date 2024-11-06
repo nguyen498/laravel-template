@@ -13,5 +13,6 @@ class PolymorphyMap
     const TRIP                          = 'trips';
     const EMPLOYEE                      = 'employees';
     const CHAT                          = 'chat';
+    const COMMENT                       = 'comment';
     const SUPPORT                       = 'supports';
 }

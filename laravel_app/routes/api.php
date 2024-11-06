@@ -257,12 +257,22 @@ Route::group(['prefix' => 'v1'], function () {
     });
 
     Route::group(['prefix' => 'user_comments'], function(){
-        Route::get('/findAll', [UserCommentApiController::class, 'findAll']);
-        Route::post('/store', [UserCommentApiController::class, 'store']);
-        Route::put('/update/{id}', [UserCommentApiController::class, 'update']);
-        Route::get('/findById/{id}', [UserCommentApiController::class, 'findById']);
-        Route::delete('/destroy/{id}', [UserCommentApiController::class, 'destroy']);
-        Route::post('/search', [UserCommentApiController::class, 'search']);
+//        Route::group(['middleware' => ['auth:employees']], function(){
+//            Route::get('/findAll', [UserCommentApiController::class, 'findAll']);
+//            Route::post('/store', [UserCommentApiController::class, 'store']);
+//            Route::put('/update/{id}', [UserCommentApiController::class, 'update']);
+            Route::get('/findById/{id}', [UserCommentApiController::class, 'findById']);
+//            Route::delete('/destroy/{id}', [UserCommentApiController::class, 'destroy']);
+//            Route::post('/search', [UserCommentApiController::class, 'search']);
+//        });
+
+        Route::group(['middleware' => ['auth:users']], function(){
+            Route::post('/comment_post', [UserCommentApiController::class, 'sendCommentPost']);
+            Route::put('/update_comment/{id}', [UserCommentApiController::class, 'updateComment']);
+            Route::delete('/delete_comment/{id}', [UserCommentApiController::class, 'destroy']);
+            Route::post('/searchApp', [UserCommentApiController::class, 'search']);
+        });
+
     });
 
     Route::group(['prefix' => 'user_group_chats'], function(){

@@ -149,6 +149,11 @@ class Post extends Model implements Explored, IndexSettings, Aliased
         return $this->belongsTo(PostIndustry::class);
     }
 
+    public function userComments()
+    {
+        return $this->hasMany(UserComment::class, 'object_id')->where('object_type', 'posts');
+    }
+
     public function searchableAs()
     {
         return 'posts_index';

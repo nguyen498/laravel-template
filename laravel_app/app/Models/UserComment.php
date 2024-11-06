@@ -68,9 +68,19 @@ class UserComment extends Model
         return $this->belongsTo(User::class, 'actor_id');
     }
 
+    public function post()
+    {
+        return $this->belongsTo(Post::class, 'object_id');
+    }
+
     public function parentComment()
     {
         return $this->belongsTo(UserComment::class, 'parent_id');
+    }
+
+    public function children()
+    {
+        return $this->hasMany(UserComment::class, 'parent_id', 'id')->with('children');
     }
 
 }

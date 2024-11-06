@@ -102,73 +102,39 @@ class UserInboxService extends BaseService
         ];
     }
 
-    public function storeUser($inputs){
-        if(!isset($inputs['type'])) {
-            return [ 'code' => '003', 'message' => 'Loại thông báo' ];
-        }
-        if(!isset($inputs['user_id'])) {
-            return [ 'code' => '003', 'message' => 'Id người dùng' ];
-        }
-        if(!isset($inputs['user_type'])) { $inputs['user_type'] = PolymorphyMap::USER; }
-        if(!isset($inputs['comment_type'])) { $inputs['comment_type'] = UserInbox::COMMENT_TYPE_WITHOUT_COMMENT; }
-        if(!isset($inputs['read_status'])) { $inputs['read_status'] = UserInbox::READ_STATUS_NOT_READ; }
-        if(!isset($inputs['status'])) { $inputs['status'] = UserInbox::STATUS_NEW; }
-
-        $inputs['title'] = $this->generatePassengerTitle($inputs['type'], null);
-        if(!isset($inputs['title'])) {
-            return [ 'code' => '008', 'message' => 'Loại thông báo' ];
-        }
-        if(in_array($inputs['type'], [
-            UserInbox::TYPE_PASSENGER_CONFIRM_TRIP,
-            UserInbox::TYPE_PASSENGER_ARRIVED_TRIP,
-            UserInbox::TYPE_PASSENGER_FINISHED_TRIP,
-            UserInbox::TYPE_PASSENGER_INSURANCE_TRIP])) {
-            $inputs['data'] = $this->generateDataTrip($inputs['trip'], $inputs['type']);
-        }
-        $inputs['content'] = $this->generatePassengerContent($inputs['type'], $inputs['data'], null);
-        if(isset($inputs['data']['trip'])) {
-            // unset data trip
-            foreach(['request_log', 'response_log'] as $val) {
-                unset($inputs['data']['trip'][$val]);
-            }
-        }
-
-        $inputs['data'] = json_encode($inputs['data'], JSON_UNESCAPED_UNICODE);
-        // create inbox
-        $user_inbox = $this->repo_base->create($inputs);
-        // send to inbox
-        $job = (new ProcessSendNotificationInboxJob($user_inbox))
-            ->onQueue(QueueMap::QUEUE_USER_INBOX);
-        dispatch($job);
-        return [
-            'code' => '200',
-            'data' => $this->formatData($user_inbox)
-        ];
-    }
-
-    public function sendChatTrip($inputs){
-        $inputs['type'] = UserInbox::TYPE_TRIP_CHAT;
+    public function sendCommentNotificationToPostOwner($inputs){
+        $inputs['type'] = UserInbox::TYPE_COMMENT_TO_POST_OWNER;
         if(!isset($inputs['user_id'])) {
             return [ 'code' => '003', 'message' => 'Id user' ];
         }
-        if(!isset($inputs['user_type'])) { $inputs['user_type'] = PolymorphyMap::USER; }
-        if(!isset($inputs['comment_type'])) { $inputs['comment_type'] = UserInbox::COMMENT_TYPE_WITHOUT_COMMENT; }
+//        if(!isset($inputs['user_type'])) { $inputs['user_type'] = PolymorphyMap::USER; }
+//        if(!isset($inputs['comment_type'])) { $inputs['comment_type'] = UserInbox::COMMENT_TYPE_WITHOUT_COMMENT; }
         if(!isset($inputs['read_status'])) { $inputs['read_status'] = UserInbox::READ_STATUS_NOT_READ; }
         if(!isset($inputs['status'])) { $inputs['status'] = UserInbox::STATUS_NEW; }
 
-        $inputs['title'] = $this->generateTitleChatTrip($inputs['user_type']);
+        $inputs['title'] = $this->generateTitleWithType($inputs['type'],[
+            'user_name' => $inputs['actor_name']
+        ]);
         if(!isset($inputs['title'])) {
             return [ 'code' => '008', 'message' => 'Loại thông báo' ];
         }
         $inputs['data'] = [
-            'trip_id' => $inputs['trip_id'],
-            'trip_reference' => $inputs['trip_reference'],
-            'type' => UserInbox::TYPE_TRIP_CHAT
+            'post_id' => $inputs['post_id'],
+            'type' => $inputs['type']
         ];
-        $reference = isset($inputs['trip_reference']) ? $inputs['trip_reference'] : null;
-        $inputs['content'] = $this->generateContentChatTrip($inputs['user_type'], $reference);
+
+        $inputs['content'] = $this->generateContentWithType($inputs['type'], [
+            'user_name' => $inputs['actor_name'],
+            'content' => $inputs['message']
+        ]);
+
         $inputs['data'] = json_encode($inputs['data'], JSON_UNESCAPED_UNICODE);
         // create inbox
+        $inputs['inbox_id'] = $inputs['post_id'];
+        $inputs['inbox_type'] = 'posts';
+        unset($inputs['post_id']);
+        unset($inputs['actor_name']);
+        unset($inputs['message']);
         $user_inbox = $this->repo_base->create($inputs);
         // send to inbox
         $job = (new ProcessSendNotificationInboxOneTimeJob($user_inbox))
@@ -180,29 +146,40 @@ class UserInboxService extends BaseService
         ];
     }
 
-    public function sendChatSupport($inputs){
-        $inputs['type'] = UserInbox::TYPE_SUPPORT_CHAT;
+    public function sendCommentNotificationToParentComment($inputs){
+        $inputs['type'] = UserInbox::TYPE_COMMENT_TO_PARENT_COMMENT;
         if(!isset($inputs['user_id'])) {
             return [ 'code' => '003', 'message' => 'Id user' ];
         }
-        if(!isset($inputs['user_type'])) { $inputs['user_type'] = PolymorphyMap::USER; }
-        if(!isset($inputs['comment_type'])) { $inputs['comment_type'] = UserInbox::COMMENT_TYPE_WITHOUT_COMMENT; }
+//        if(!isset($inputs['user_type'])) { $inputs['user_type'] = PolymorphyMap::USER; }
+//        if(!isset($inputs['comment_type'])) { $inputs['comment_type'] = UserInbox::COMMENT_TYPE_WITHOUT_COMMENT; }
         if(!isset($inputs['read_status'])) { $inputs['read_status'] = UserInbox::READ_STATUS_NOT_READ; }
         if(!isset($inputs['status'])) { $inputs['status'] = UserInbox::STATUS_NEW; }
 
-        $inputs['title'] = $this->generateTitleChatSupport($inputs['user_type']);
+        $inputs['title'] = $this->generateTitleWithType($inputs['type'],[
+            'user_name' => $inputs['actor_name']
+        ]);
         if(!isset($inputs['title'])) {
             return [ 'code' => '008', 'message' => 'Loại thông báo' ];
         }
         $inputs['data'] = [
-            'support_id' => $inputs['support_id'],
-            'support_reference' => $inputs['support_reference'],
-            'support_title' => $inputs['support_title'],
-            'type' => UserInbox::TYPE_SUPPORT_CHAT
+            'post_id' => $inputs['post_id'],
+            'type' => $inputs['type']
         ];
-        $inputs['content'] = $this->generateContentChatSupport($inputs['user_type'], $inputs['support_title']);
+
+        $inputs['content'] = $this->generateContentWithType($inputs['type'], [
+            'user_name' => $inputs['actor_name'],
+            'content' => $inputs['message']
+        ]);
+
         $inputs['data'] = json_encode($inputs['data'], JSON_UNESCAPED_UNICODE);
         // create inbox
+        $inputs['inbox_id'] = $inputs['comment_id'];
+        $inputs['inbox_type'] = 'comments';
+        unset($inputs['comment_id']);
+        unset($inputs['post_id']);
+        unset($inputs['actor_name']);
+        unset($inputs['message']);
         $user_inbox = $this->repo_base->create($inputs);
         // send to inbox
         $job = (new ProcessSendNotificationInboxOneTimeJob($user_inbox))
@@ -309,18 +286,38 @@ class UserInboxService extends BaseService
         return $data;
     }
 
-    private function generateTitleChatTrip($user_type) {
-        switch ($user_type) {
-            case PolymorphyMap::USER:
-                return config('inbox_message.title.chat_trip.passenger');
+    private function generateTitleWithType($type, $data = []) {
+        switch ($type) {
+            case UserInbox::TYPE_COMMENT_TO_POST_OWNER:
+                $user_name = '';
+                if(isset($data['user_name'])){
+                    $user_name = $data['user_name'];
+                }
+                return sprintf(config('user_inbox.title')[UserInbox::TYPE_COMMENT_TO_POST_OWNER]['vi'], $user_name);
+            case UserInbox::TYPE_COMMENT_TO_PARENT_COMMENT:
+                $user_name = '';
+                if(isset($data['user_name'])){
+                    $user_name = $data['user_name'];
+                }
+                return sprintf(config('user_inbox.title')[UserInbox::TYPE_COMMENT_TO_PARENT_COMMENT]['vi'], $user_name);
         }
         return null;
     }
 
-    private function generateContentChatTrip($user_type, $reference) {
-        switch ($user_type) {
-            case PolymorphyMap::USER:
-                return sprintf(config('inbox_message.message.chat_trip.passenger'), '');
+    private function generateContentWithType($type, $data = []) {
+        $user_name = '';
+        if(isset($data['user_name'])){
+            $user_name = $data['user_name'];
+        }
+        $content = '';
+        if(isset($data['content'])){
+            $content = $data['content'];
+        }
+        switch ($type) {
+            case UserInbox::TYPE_COMMENT_TO_POST_OWNER:
+                return sprintf(config('user_inbox.content')[UserInbox::TYPE_COMMENT_TO_POST_OWNER]['vi'], $user_name, $content);
+            case UserInbox::TYPE_COMMENT_TO_PARENT_COMMENT:
+                return sprintf(config('user_inbox.content')[UserInbox::TYPE_COMMENT_TO_PARENT_COMMENT]['vi'], $user_name, $content);
         }
         return null;
     }
@@ -396,8 +393,6 @@ class UserInboxService extends BaseService
         if(isset($res['data'])) {
             $res['data'] = json_decode($res['data'], true);
         }
-        $res['type_name'] = config('enums.user_inbox.type')[$res['type']];
-        $res['read_status_name'] = config('enums.user_inbox.read_status')[$res['read_status']];
         return $res;
     }
 

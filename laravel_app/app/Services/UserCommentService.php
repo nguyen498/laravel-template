@@ -5,133 +5,100 @@ namespace App\Services;
 
 
 use App\Constants\PolymorphyMap;
-use App\Models\Support;
+use App\Models\Post;
+use App\Models\User;
 use App\Models\UserComment;
-use App\Repositories\Interfaces\SupportRepositoryInterface;
 use App\Repositories\Interfaces\UserCommentRepositoryInterface;
 use App\Services\Base\BaseService;
-use App\Services\Client\TripService;
+use Illuminate\Support\Facades\Auth;
 
 class UserCommentService extends BaseService
 {
     protected $repo_base;
-    protected $repo_supports;
     protected $service_user_inbox;
-    protected $service_trip;
-    protected $service_telegram;
     protected $with;
 
     public function __construct(
         UserCommentRepositoryInterface $repo_base,
-        SupportRepositoryInterface $repo_supports,
         UserInboxService $service_user_inbox,
-        TripService $service_trip,
-        TelegramMessageService $service_telegram
     ) {
         $this->repo_base                = $repo_base;
-        $this->repo_supports            = $repo_supports;
         $this->service_user_inbox       = $service_user_inbox;
-        $this->service_trip             = $service_trip;
-        $this->service_telegram         = $service_telegram;
-        $this->with                     = [];
+        $this->with                     = ['actor', 'children'];
     }
 
     public function getModelName()
     {
-        return 'Hộp thư';
+        return 'Comment';
     }
 
-    public function sendMessage($inputs) {
-        $inputs = $this->getAuthInputs($inputs);
-        $check =  $this->checkInputs($inputs, null);
+    public function getTableName()
+    {
+        return (new UserComment())->getTable();
+    }
+
+    public function sendCommentPost($inputs) {
+        $user = Auth::user();
+        $check = $this->checkInputsPost($inputs, null);
         if($check['is_failed']) {
             return $check;
         }
         $inputs = $check['inputs'];
+        $inputs['actor_id'] = $user->id;
+        $inputs['actor_type'] = 'users';
+        $inputs['actor_name'] = $user->first_name ?? $user->phone;
         $data = $this->repo_base->create($inputs);
-        $data = $this->repo_base->findById($data->id);
-        // auto update support
-        $this->updateSupport($data);
-        // send notificaiton
-        $this->sendOneTimeNotification($data);
+        $data = $this->repo_base->findById($data->id, ['post', 'parentComment']);
+
+        $resp = $this->formatData($data);
+        $message = $data->message;
+        if((!isset($data->message) || $data->message === "") && isset($data->medias)){
+            $medias = json_decode($data->medias);
+            $total_medias = count($medias);
+            $message = "Bằng {$total_medias} hình ảnh";
+        }
+
+        $this->service_user_inbox->sendCommentNotificationToPostOwner([
+            'user_id' => $data->post->user_id,
+            'post_id' => $data->object_id,
+            'actor_name' => $data->actor_name,
+            'message' => $message
+        ]);
+        if(isset($data->parent_id)){
+            $this->service_user_inbox->sendCommentNotificationToParentComment([
+                'comment_id' => $data->id,
+                'user_id' => $data->parentComment->actor_id,
+                'post_id' => $data->object_id,
+                'actor_name' => $data->actor_name,
+                'message' => $message
+            ]);
+        }
+
+        return [
+            'code' => '200',
+            'data' => $resp
+        ];
+    }
+
+    public function updateComment($id,$inputs){
+        $data = $this->repo_base->findById($id);
+        if (!isset($data)) {
+            return ['code' => '004', 'message' => $this->getModelName()];
+        }
+        $validate = $this->checkInputs($inputs, $id);
+        if ($validate['is_failed']) {
+            return $validate;
+        }
+        $input_dat = $validate['inputs'];
+
+        $this->repo_base->update($id, $input_dat);
+        $data = $this->repo_base->findById($data->id, $this->with);
         return [
             'code' => '200',
             'data' => $this->formatData($data)
         ];
     }
 
-    public function updateIsRead($inputs) {
-        $inputs = $this->getAuthInputs($inputs);
-        if(!isset($inputs['id'])) {
-            return [ 'code' => '003', 'message' => 'Định danh tin nhắn' ];
-        }
-        if(!isset($inputs['object_id'])) {
-            return [ 'code' => '003', 'message' => 'Định danh phòng chat' ];
-        }
-        if(!isset($inputs['object_type'])) {
-            return [ 'code' => '003', 'message' => 'Loại phòng chat' ];
-        }
-        $this->repo_base->updateIsRead([
-            'id' => $inputs['id'],
-            'object_id' => $inputs['object_id'],
-            'object_type' => $inputs['object_type'],
-        ], $inputs['actor_id'], $inputs['actor_type']);
-
-        return [
-            'code' => '200',
-            'message' => 'update is read'
-        ];
-    }
-
-    public function countIsRead($inputs) {
-        $inputs = $this->getAuthInputs($inputs);
-        if(!isset($inputs['object_id'])) {
-            return [ 'code' => '003', 'message' => 'Định danh phòng chat' ];
-        }
-        if(!isset($inputs['object_type'])) {
-            return [ 'code' => '003', 'message' => 'Loại phòng chat' ];
-        }
-        $count = $this->repo_base->countIsRead([
-            'is_read' => UserComment::NOT_READ,
-            'object_id' => $inputs['object_id'],
-            'object_type' => $inputs['object_type'],
-        ], $inputs['actor_id'], $inputs['actor_type']);
-
-        return [
-            'code' => '200',
-            'data' => [
-                'is_read' => $count > 0 ? true : false,
-                'total' => $count
-            ]
-        ];
-    }
-
-    public function searchApp($inputs) {
-        $inputs = $this->getAuthInputs($inputs);
-        if(!isset($inputs['actor_id'])) {
-            return [ 'code' => '401', 'message' => '' ];
-        }
-        if(isset($inputs['filter']['object_type'])){
-            if(isset($inputs['filter']['object_id'])) {
-                if($inputs['filter']['object_type'] == 'trips') {
-                    $res_trip = $this->service_trip->findOnlyTripById($inputs['filter']['object_id']);
-                    if(isset($res_trip['data'])) {
-                        $trip = $res_trip['data'];
-                        // check from customer
-                        if($inputs['actor_id'] != $trip['driver_id']
-                            && $inputs['actor_id'] != $trip['passenger_id']){
-                            return [
-                                'code' => '200',
-                                'data' => [ 'data' => [], 'total' => 0 ]
-                            ];
-                        }
-                    }
-                }
-            }
-
-        }
-        return $this->search($inputs);
-    }
 
     public function search($inputs)
     {
@@ -176,17 +143,16 @@ class UserCommentService extends BaseService
 
     public function destroyApp($inputs)
     {
-        $inputs = $this->getAuthInputs($inputs);
         if (!isset($inputs['actor_id'])) {
             return ['code' => '401', 'message' => ''];
         }
         $comment = $this->repo_base->findById($inputs['id']);
         if(!isset($comment)){
-            return ['code' => '004', 'message' => 'Tin nhắn chat'];
+            return ['code' => '004', 'message' => 'Comment'];
         }
         if($comment->actor_id != $inputs['actor_id']
             && $comment->actor_type != $inputs['actor_type']) {
-            return ['code' => '008', 'message' => 'Tin nhắn chat'];
+            return ['code' => '008', 'message' => 'Comment'];
         }
         $this->repo_base->delete($comment->id);
 
@@ -196,32 +162,38 @@ class UserCommentService extends BaseService
 
     }
 
-    public function getTableName()
-    {
-        return (new UserComment())->getTable();
-    }
-
     public function checkInputs($inputs, $id)
     {
-        if (!isset($inputs['actor_id'])) {
-            return ['is_failed' => true, 'code' => '003', 'message' => 'Người chat'];
+        if (!isset($inputs['message'])) {
+            return ['is_failed' => true, 'code' => '003', 'message' => 'Message'];
         }
 
-        if (!isset($inputs['object_id'])) {
-            return ['is_failed' => true, 'code' => '003', 'message' => 'Phòng chat'];
+        return [
+            'is_failed' => false,
+            'inputs' => $inputs
+        ];
+    }
+
+    public function checkInputsPost($inputs, $id)
+    {
+        if (!isset($inputs['post_id'])) {
+            return ['is_failed' => true, 'code' => '003', 'message' => 'Post'];
         }
 
         if (!isset($inputs['message'])) {
-            return ['is_failed' => true, 'code' => '003', 'message' => 'Nội dung'];
+            return ['is_failed' => true, 'code' => '003', 'message' => 'Message'];
         }
 
         if(!isset($id) && !isset($inputs['verb'])) {
-            $inputs['verb'] = PolymorphyMap::CHAT;
+            $inputs['verb'] = PolymorphyMap::COMMENT;
         }
 
         if(isset($inputs['medias'])){
             $inputs['medias'] = json_encode($inputs['medias'], JSON_UNESCAPED_UNICODE);
         }
+        $inputs['object_id'] = $inputs['post_id'];
+        $inputs['object_type'] = 'posts';
+        unset($inputs['post_id']);
         return [
             'is_failed' => false,
             'inputs' => $inputs
@@ -229,6 +201,7 @@ class UserCommentService extends BaseService
     }
 
     public function generateColumn($inputs, $columns) {
+        array_push($columns, $this->getTableName() . '.parent_id IS NULL');
         if(isset($inputs['status']) && $inputs['status'] != 'all') {
             array_push($columns, $this->getTableName() . '.status = \'' . $inputs['status'] . '\'');
         }
@@ -272,118 +245,5 @@ class UserCommentService extends BaseService
             $this->getTableName() .'.object_id',
             $this->getTableName() .'.object_type',
         ];
-    }
-
-    private function getAuthInputs($inputs) {
-        if(isset($inputs['auth'])) {
-            $auth = $inputs['auth'];
-            if(isset($auth['type'])) {
-                switch ($auth['type']) {
-                    case 'passengers':
-                        $inputs['actor_id'] = $auth['passenger_id'];
-                        $inputs['actor_type'] = PolymorphyMap::USER;
-                        break;
-                    case 'drivers':
-                        $inputs['actor_id'] = $auth['driver_id'];
-                        $inputs['actor_type'] = PolymorphyMap::DRIVER;
-                        break;
-                    case 'employees':
-                        $inputs['actor_id'] = $auth['employee_id'];
-                        $inputs['actor_type'] = PolymorphyMap::EMPLOYEE;
-                        break;
-                }
-            }
-            if(isset($auth['phone'])) {
-                $inputs['actor_name'] = $auth['phone'];
-            }
-            if(isset($auth['name'])) {
-                $inputs['actor_name'] = $auth['name'];
-            }
-        }
-        return $inputs;
-    }
-
-    public function updateSupport($comment) {
-        if($comment->object_type === PolymorphyMap::SUPPORT) {
-            $support = $this->repo_supports->findById($comment->object_id);
-            if(isset($support)) {
-                $inputs = [
-                    'status' => Support::STATUS_ADMIN_REPLY,
-                    'is_read_admin' => false,
-                    'is_read_user' => true
-                ];
-                if($comment->actor_type === PolymorphyMap::DRIVER
-                    || $comment->actor_type === PolymorphyMap::USER) {
-                    $inputs['status'] = Support::STATUS_USER_REPLY;
-                    $inputs['is_read_admin'] = true;
-                    $inputs['is_read_user'] = false;
-
-                }
-                $this->repo_supports->update($support->id, $inputs);
-
-                if($comment->actor_type === PolymorphyMap::EMPLOYEE) {
-                    $input_chat = [
-                        'support_id' => $support->id,
-                        'support_reference' => $support->reference,
-                        'support_title' => $support->title
-                    ];
-                    if($support->type === Support::TYPE_PASSENGER) {
-                        $input_chat['user_id'] = $support->passenger_id;
-                        $input_chat['user_type'] = PolymorphyMap::USER;
-                    }
-
-                    $this->service_user_inbox->sendChatSupport($input_chat);
-                } else {
-                    // send telegram message if it send by user or driver
-                    $this->sendTelegramMessage($support);
-                }
-            }
-        }
-    }
-
-    public function sendOneTimeNotification($comment) {
-        if($comment->object_type === PolymorphyMap::TRIP) {
-            $res_trip = $this->service_trip->findOnlyTripById($comment->object_id);
-            if(isset($res_trip['data'])) {
-                $trip = $res_trip['data'];
-                $inputs = [];
-                if($comment->actor_type === PolymorphyMap::USER) {
-                    $inputs['user_id'] = $trip['driver_id'];
-                    $inputs['user_type'] = PolymorphyMap::DRIVER;
-                } else {
-                    $inputs['user_id'] = $trip['passenger_id'];
-                    $inputs['user_type'] = PolymorphyMap::USER;
-                }
-                $inputs['trip_id'] = $trip['id'];
-                $inputs['trip_reference'] = $trip['reference'];
-                $inputs['driver_name'] = $trip['driver_name'];
-                $inputs['driver_phone'] = $trip['driver_phone'];
-                $inputs['passenger_name'] = $trip['passenger_name'];
-                $inputs['passenger_phone'] = $trip['passenger_phone'];
-
-                $this->service_user_inbox->sendChatTrip($inputs);
-            }
-
-        }
-    }
-
-    private function setSupportCommentContent($data) {
-        $content = null;
-        if($data->type === Support::TYPE_PASSENGER) {
-            $content = sprintf(config('telegram_content.support.passenger'),
-                $data->user_reference,
-                $data->phone,
-                $data->title
-//                config('telegram_content.support.user_comment')
-            );
-        } else if($data->type === Support::TYPE_DRIVER) {
-            $content = sprintf(config('telegram_content.support.driver'),
-                $data->user_reference,
-                $data->phone,
-                $data->title
-//                config('telegram_content.support.user_comment')
-            );
-        }
-        return $content;
     }
 }
