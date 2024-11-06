@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Constants\QueueMap;
 use App\Jobs\CreateKeywordJob;
 use App\Jobs\DeleteKeywordJob;
 use App\Models\Post;
@@ -58,7 +59,7 @@ class PostService extends BaseService
         $data = $this->repo_base->findById($data->id, $this->with);
 
         $text = "{$data->title}. {$data->description}";
-        dispatch(new CreateKeywordJob($text, $data->id));
+        dispatch((new CreateKeywordJob($text, $data->id))->onQueue(QueueMap::QUEUE_GENERATE_KEYWORD));
         return [
             'code' => '200',
             'data' => $this->formatData($data)
@@ -87,7 +88,7 @@ class PostService extends BaseService
         $this->repo_base->update($id, $input_data);
         $data = $this->repo_base->findById($data->id, $this->with);
         $text = "{$data->title}. {$data->description}";
-        dispatch(new CreateKeywordJob($text, $data->id));
+        dispatch((new CreateKeywordJob($text, $data->id))->onQueue(QueueMap::QUEUE_GENERATE_KEYWORD));
         return [
             'code' => '200',
             'data' => $this->formatData($data)
@@ -110,7 +111,7 @@ class PostService extends BaseService
             ];
         }
 
-        dispatch(new DeleteKeywordJob($data->id));
+        dispatch((new DeleteKeywordJob($data->id))->onQueue(QueueMap::QUEUE_GENERATE_KEYWORD));
         $data->delete();
 
         return [

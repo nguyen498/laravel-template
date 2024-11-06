@@ -15,6 +15,7 @@ use App\Lib\Models\Prefix;
 use App\Lib\Models\QuerySort;
 use App\Utils\SqlUtil;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use JeroenG\Explorer\Domain\Syntax\MatchAll;
 use JeroenG\Explorer\Domain\Syntax\Matching;

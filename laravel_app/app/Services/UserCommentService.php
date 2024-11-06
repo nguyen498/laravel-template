@@ -58,12 +58,15 @@ class UserCommentService extends BaseService
             $message = "Bằng {$total_medias} hình ảnh";
         }
 
-        $this->service_user_inbox->sendCommentNotificationToPostOwner([
-            'user_id' => $data->post->user_id,
-            'post_id' => $data->object_id,
-            'actor_name' => $data->actor_name,
-            'message' => $message
-        ]);
+        if($data->post->user_id !== $user->id){
+            $this->service_user_inbox->sendCommentNotificationToPostOwner([
+                'user_id' => $data->post->user_id,
+                'post_id' => $data->object_id,
+                'actor_name' => $data->actor_name,
+                'message' => $message
+            ]);
+        }
+
         if(isset($data->parent_id)){
             $this->service_user_inbox->sendCommentNotificationToParentComment([
                 'comment_id' => $data->id,
