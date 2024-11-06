@@ -5,6 +5,7 @@ namespace App\Excel;
 
 
 use App\Excel\Import\PostImport;
+use App\Jobs\CreateKeywordJob;
 use App\Models\Category;
 use App\Models\Post;
 use App\Models\PostIndustry;
@@ -15,6 +16,7 @@ use App\Repositories\Interfaces\PostRepositoryInterface;
 use App\Repositories\Interfaces\SubCategoryRepositoryInterface;
 use App\Utils\LogHelper;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Str;
 use Shuchkin\SimpleCSV;
 use Shuchkin\SimpleXLS;
@@ -274,10 +276,30 @@ class PostExcelService
         }
 
         if(count($insert_posts) > 0) {
+//            Post::query()->insert($insert_posts);
             $this->repo_base->insertDBs($insert_posts);
+            foreach ($insert_posts as $insert_post){
+                if(isset($insert_post['id'])){
+                    $post = Post::find($insert_post['id']);
+                    $post->searchable();
+
+                    $text = "{$insert_post['title']}. {$insert_post['description']}";
+                    dispatch(new CreateKeywordJob($text, $insert_post['id']));
+                }
+            }
         }
         if(count($update_posts) > 0) {
             $this->repo_base->updateMultiple($update_posts);
+//            Post::query()->upsert($update_posts, 'reference');
+            foreach ($update_posts as $update_post){
+                if(isset($update_post['reference'])){
+                    $post = Post::query()->where('reference', $update_post['reference'])->first();
+                    $post->searchable();
+
+                    $text = "{$update_post['title']}. {$update_post['description']}";
+                    dispatch(new CreateKeywordJob($text, $post->id));
+                }
+            }
         }
 
         return [
