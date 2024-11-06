@@ -19,7 +19,7 @@ class SimpleExtendXLSXGen extends SimpleXLSXGen
 			return false;
 		}
 		fclose($fh);
-        Storage::disk('private')->put($folder . '/' . $filename, file_get_contents($temp_file));
+        Storage::disk('public')->put($folder . '/' . $filename, file_get_contents($temp_file));
 		unlink($temp_file);
 		return true;
 	}

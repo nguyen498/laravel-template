@@ -8,11 +8,9 @@ use App\Models\Post;
 use App\Models\PostCms;
 use App\Repositories\Interfaces\PostCmsRepositoryInterface;
 use App\Repositories\Interfaces\PostIndustryRepositoryInterface;
-use App\Repositories\Interfaces\PostRepositoryInterface;
 use App\Repositories\Interfaces\SubCategoryRepositoryInterface;
 use App\Services\Base\BaseService;
-use App\Services\Client\KeywordClientService;
-use App\Utils\StringHelpers;
+use App\Services\Excel\ExcelExportService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
@@ -20,20 +18,23 @@ use Illuminate\Support\Str;
 class PostCmsService extends BaseService
 {
     protected $repo_base;
-    protected SubCategoryRepositoryInterface $repo_sub_category;
-    protected PostIndustryRepositoryInterface $repo_post_industry;
+    protected $repo_sub_category;
+    protected $repo_post_industry;
+    protected $service_export_excel;
     protected $with;
 
     public function __construct(
         PostCmsRepositoryInterface $repo_base,
         SubCategoryRepositoryInterface $repo_sub_category,
         PostIndustryRepositoryInterface $repo_post_industry,
+        ExcelExportService $service_export_excel
     )
     {
         $this->repo_base = $repo_base;
         $this->repo_sub_category = $repo_sub_category;
         $this->repo_post_industry = $repo_post_industry;
-        $this->with = [];
+        $this->service_export_excel = $service_export_excel;
+        $this->with = ['category', 'subCategory', 'postIndustry'];
     }
 
     public function getModelName()
@@ -60,7 +61,6 @@ class PostCmsService extends BaseService
         $data = $this->repo_base->findById($data->id, $this->with);
 
         $text = "{$data->title}. {$data->description}";
-        dispatch(new CreateKeywordJob($text, $data->id));
         return [
             'code' => '200',
             'data' => $this->formatData($data)
@@ -209,13 +209,6 @@ class PostCmsService extends BaseService
             ];
         }
         $data['medias'] = json_encode($inputs['medias']);
-//        if(!isset($inputs['category_id'])){
-//            return [
-//                'is_failed' => true,
-//                'code' => '003',
-//                'message' => 'Store name'
-//            ];
-//        }
         if(!isset($inputs['sub_category_id'])) {
             return [
                 'is_failed' => true,
@@ -712,5 +705,179 @@ class PostCmsService extends BaseService
             array_push($columns, $this->getTableName() . ".num_employees = '{$inputs['num_employees']}'");
         }
         return $columns;
+    }
+
+    public function exportExcel($inputs)
+    {
+        $this->is_app = isset($inputs['is_app']) ? $inputs['is_app'] : false;
+        $text = null;
+        $columns = [];
+        $columnsHas = [];
+        $term = isset($inputs['term']) ? $inputs['term'] : [];
+        $with = isset($inputs['with']) ? $inputs['with'] : $this->with;
+        $page = isset($inputs['page']) ? $inputs['page'] : 1;
+        $limit = isset($inputs['limit']) ? $inputs['limit'] : 99999;
+        $orderBy = isset($inputs['order_by']) ? $inputs['order_by'] : 'created_at';
+        $sort = isset($inputs['sort']) ? $inputs['sort'] : 'desc';
+        $joins = $this->getJoinTable();
+
+        $orderBy = $this->generateOrder($orderBy);
+        $select = $this->generateSelect($inputs, $this->getTableName());
+        // status
+        $columns = $this->generateColumn($inputs['filter'], $columns);
+        // generate conditions from term
+        $query = $this->generateQuery($term, $columns);
+        $columns = $query['columns'];
+        $text = $query['search'];
+
+        $datas = $this->repo_base->searchText($text, $columns, $columnsHas, $joins, $page, $limit, $orderBy, $sort, $with, $select);
+
+        if (count($datas) > 0) {
+            return $this->service_export_excel->exportExcel(
+                $this->formatExcelSelectData($datas),
+                config('excel_enums.post.excel_name'). '_' . time() . config('excel_enums.excel_ext'),
+                $this->generateHeaderExcel(),
+                config('excel_enums.post.subject_name'),
+                ['A1:V1']
+            );
+        }
+        return
+            [
+                'success' => false,
+                'error' =>  sprintf(config('error_code')['080'], 'Nhân viên'),
+                'code' => '080'
+            ];
+    }
+
+    public function formatExcelSelectData($datas)
+    {
+        $res = [];
+        array_push($res, $this->generateExcelColumn());
+        foreach ($datas as $key => $data) {
+            array_push($res, $this->formatExcelData($data, $key));
+        }
+        return $res;
+    }
+
+    public function generateExcelColumn()
+    {
+        $open_style = '<b><style border="#000000" bgcolor="#BCF79C"><center>';
+        $close_stype = '</center></style></b>';
+        return [
+            'id' => $open_style . 'STT' . $close_stype,
+            'reference' => $open_style .  'Mã bài đăng' . $close_stype,
+            'category_name' => $open_style . 'Tên menu' . $close_stype,
+            'sub_category_name' => $open_style . 'Tên sub menu' . $close_stype,
+            'post_industry_name' => $open_style . 'Loại industry' . $close_stype,
+            'type' => $open_style . 'Loại bài đăng' . $close_stype,
+            'status' => $open_style . 'Trạng thái' . $close_stype,
+            'title' => $open_style . 'Tiêu đề' . $close_stype,
+            'phone_number' => $open_style . 'Số điện thoại' . $close_stype,
+            'email' => $open_style . 'Địa chỉ email' . $close_stype,
+            'website' => $open_style . 'Link website' . $close_stype,
+            'store_name' => $open_style . 'Tên shop' . $close_stype,
+            'store_address' => $open_style . 'Địa chỉ shop' . $close_stype,
+            'store_area' => $open_style . 'Khu vực' . $close_stype,
+            'avg_salary' => $open_style . 'Lương trung bình' . $close_stype,
+            'min_salary' => $open_style . 'Lương thấp nhất' . $close_stype,
+            'max_salary' => $open_style . 'Lương cao nhất' . $close_stype,
+            'type_salary' => $open_style . 'Loại nhận lương' . $close_stype,
+            'price' => $open_style . 'Giá' . $close_stype,
+            'avg_revenue' => $open_style . 'Doanh thu trung bình' . $close_stype,
+            'created_at' => $open_style . 'Ngày tạo' . $close_stype,
+            'updated_at' => $open_style . 'Ngày cập nhật' . $close_stype,
+        ];
+    }
+
+    public function generateHeaderExcel()
+    {
+        $open_style = '<center>';
+        $close_stype = '</center>';
+        return [
+            'id' => $open_style . 'THÔNG TIN BÀI VIẾT' . $close_stype,
+            'reference' => '',
+            'category_name' => '',
+            'sub_category_name' => '',
+            'post_industry_name' => '',
+            'type' => '',
+            'status' => '',
+            'title' => '',
+            'phone_number' => '',
+            'email' => '',
+            'store_name' => '',
+            'store_address' => '',
+            'store_area' => '',
+            'avg_salary' => '',
+            'min_salary' => '',
+            'max_salary' => '',
+            'type_salary' => '',
+            'price' => '',
+            'avg_revenue' => '',
+            'created_at' => '',
+            'updated_at' => '',
+        ];
+    }
+
+    public function formatExcelData($data, $key)
+    {
+        $res = [
+            'id' => $key + 1,
+            'reference' => $data->reference,
+            'category_name' => isset($data->category_name) ? $data->category_name : '',
+            'sub_category_name' => isset($data->sub_category_name) ? $data->sub_category_name : '',
+            'post_industry_name' => isset($data->post_industry_name) ? $data->post_industry_name : '',
+            'type' => isset($data->type) ? $data->type : '',
+            'status' => isset($data->status) ? $data->status : '',
+            'title' => isset($data->title) ? $data->title : '',
+            'phone_number' => isset($data->phone_number) ? $data->phone_number : '',
+            'email' => isset($data->email) ? $data->email : '',
+            'website' => isset($data->website) ? $data->website : '',
+            'store_name' => isset($data->store_name) ? $data->store_name : '',
+            'store_address' => isset($data->store_address) ? $data->store_address : '',
+            'store_area' => $data->store_area,
+            'avg_salary' => isset($data->avg_salary) ? $data->avg_salary : 0,
+            'min_salary' => isset($data->min_salary) ? $data->min_salary : 0,
+            'max_salary' => isset($data->max_salary) ? $data->max_salary : 0,
+            'type_salary' => isset($data->type_salary) ? $data->type_salary : 1,
+            'price' => isset($data->price) ? $data->price : 0,
+            'avg_revenue' => isset($data->avg_revenue) ? $data->avg_revenue : 0,
+            'created_at' => isset($data->created_at) ? Carbon::parse($data->created_at)->format('d/m/Y H:i:s') : '',
+            'updated_at' => isset($data->updated_at) ? Carbon::parse($data->updated_at)->format('d/m/Y H:i:s') : '',
+        ];
+        return $res;
+    }
+
+    public function getQueryDateField()
+    {
+        return [
+            $this->getTableName() . '.created_at',
+            $this->getTableName() . '.updated_at',
+        ];
+    }
+
+    public function getQueryField()
+    {
+        return [
+            $this->getTableName() . '.reference',
+            $this->getTableName() . '.category_name',
+            $this->getTableName() . '.sub_category_name',
+            $this->getTableName() . '.post_industry_name',
+            $this->getTableName() . '.phone_number',
+            $this->getTableName() . '.description',
+            $this->getTableName() . '.title',
+            $this->getTableName() . '.store_name',
+            $this->getTableName() . '.store_address',
+            $this->getTableName() . '.store_area',
+
+            $this->getTableName() . '.lease_agreement',
+            $this->getTableName() . '.avg_salary',
+            $this->getTableName() . '.min_salary',
+            $this->getTableName() . '.max_salary',
+            $this->getTableName() . '.type_salary',
+
+            $this->getTableName() . '.job_type',
+            $this->getTableName() . '.job_contract',
+            $this->getTableName() . '.avg_revenue',
+        ];
     }
 }

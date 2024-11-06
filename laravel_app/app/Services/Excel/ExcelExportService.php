@@ -17,7 +17,7 @@ class ExcelExportService
     }
 
     public function getExportFile($path) {
-        $path = "/storage/app/private/{$path}";
+        $path = "/storage/app/public/{$path}";
 
         $file_path = app()->basePath($path);
         // Kiểm tra xem file có tồn tại trong storage không
@@ -69,7 +69,7 @@ class ExcelExportService
         $xlsx->saveAsExcel($path, $filename);
         return [
             'code' => '200',
-            'data' => env("DOMAIN_URL", "http://localhost:4100") . '/api/v1/exportExcels/export/' . $path . '/' . $filename
+            'data' => env("DOMAIN_URL") . '/api/v1/exportExcels/export/' . $path . '/' . $filename
         ];
     }
 
