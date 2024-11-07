@@ -248,12 +248,18 @@ Route::group(['prefix' => 'v1'], function () {
     });
 
     Route::group(['prefix' => 'user_chats'], function(){
-        Route::get('/findAll', [UserChatApiController::class, 'findAll']);
-        Route::post('/store', [UserChatApiController::class, 'store']);
-        Route::put('/update/{id}', [UserChatApiController::class, 'update']);
-        Route::get('/findById/{id}', [UserChatApiController::class, 'findById']);
-        Route::delete('/destroy/{id}', [UserChatApiController::class, 'destroy']);
-        Route::post('/search', [UserChatApiController::class, 'search']);
+//        Route::get('/findAll', [UserChatApiController::class, 'findAll']);
+//        Route::post('/store', [UserChatApiController::class, 'store']);
+//        Route::put('/update/{id}', [UserChatApiController::class, 'update']);
+//        Route::get('/findById/{id}', [UserChatApiController::class, 'findById']);
+//        Route::delete('/destroy/{id}', [UserChatApiController::class, 'destroy']);
+//        Route::post('/search', [UserChatApiController::class, 'search']);
+
+        Route::middleware(['auth.users'])->group(function() {
+            Route::post('sendMessage', [UserChatApiController::class, 'sendMessage']);
+            Route::post('searchByUser', [UserChatApiController::class, 'searchByUser']);
+            Route::delete('deleteMessage/{id}', [UserChatApiController::class, 'deleteMessage']);
+        });
     });
 
     Route::group(['prefix' => 'user_comments'], function(){

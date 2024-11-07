@@ -49,4 +49,7 @@ class UserGroupChat extends Model
     public function userChat(){
         return $this->hasMany(UserChat::class);
     }
+    public function userRoomStatus() {
+        return $this->hasMany(UserGroupChatStatus::class);
+    }
 }

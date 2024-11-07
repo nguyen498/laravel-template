@@ -20,6 +20,7 @@ class UserChat extends Model
     protected $fillable = [
         'id',
         'actor_id',
+        'post_id',
         'actor_name',
         'message',
         'user_group_chat_id',
@@ -49,5 +50,9 @@ class UserChat extends Model
 
     public function userGroupChat(){
         return $this->belongsTo(UserGroupChat::class);
+    }
+
+    public function userChatStatus() {
+        return $this->hasMany(UserChatStatus::class);
     }
 }
