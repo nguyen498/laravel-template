@@ -109,6 +109,7 @@ class UserChatService extends BaseService
             'post_id' => $post->id,
             'actor_id' => $user_id
         ]);
+
         if(!isset($user_group_chat)){
             $user_group_chat = $this->repo_user_group_chat->create([
                 'actor_id' =>  $user_id,
@@ -128,6 +129,19 @@ class UserChatService extends BaseService
                 'status' => UserGroupChatStatus::STATUS_ACTIVE
             ]);
         }
+
+        $num_message_not_read_user = 0;
+        $num_message_not_read_actor = 0;
+        if($post->user_id === $user_id){
+            $num_message_not_read_actor = $user_group_chat->num_message_not_read_actor + 1;
+        }else{
+            $num_message_not_read_user = $user_group_chat->num_message_not_read_user + 1;
+
+        }
+        $this->repo_base->update($user_group_chat->id, [
+            'num_message_not_read_user' => $num_message_not_read_user,
+            'num_message_not_read_actor' => $num_message_not_read_actor
+        ]);
         $user_group_chat_status = $this->repo_user_group_chat_status->findOneBy([
             'user_group_chat_id' => $user_group_chat->id,
             'user_id' => $user_id,

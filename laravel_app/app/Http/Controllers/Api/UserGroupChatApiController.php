@@ -32,4 +32,12 @@ class UserGroupChatApiController extends BaseApiController
         }
         return $this->sendResponse($resp['data'], 'Delete success');
     }
+
+    public function updateReadMessage($id){
+        $resp = $this->service_base->updateReadMessage($id);
+        if($resp['code'] !== '200'){
+            return $this->sendError($resp['message'], $resp['code']);
+        }
+        return $this->sendResponse($resp['data'], 'Update read message success');
+    }
 }

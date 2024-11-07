@@ -295,6 +295,7 @@ Route::group(['prefix' => 'v1'], function () {
             Route::middleware(['auth.users'])->group(function() {
                 Route::post('search_by_user', [UserGroupChatApiController::class, 'searchByUser']);
                 Route::delete('delete_group_chat/{id}', [UserGroupChatApiController::class, 'deleteGroupChat']);
+                Route::put('update_read_message/{id}', [UserGroupChatApiController::class, 'updateReadMessage']);
             });
         });
     });

@@ -25,9 +25,12 @@ class UserGroupChat extends Model
         'actor_id',
         'actor_name',
         'actor_logo',
+        'num_message_not_read_actor',
+
         'user_id',
         'user_logo',
         'user_name',
+        'num_message_not_read_user',
     ];
 
     protected $casts = [

@@ -96,6 +96,31 @@ class UserGroupChatService extends BaseService
         return $this->search($inputs);
     }
 
+    public function updateReadMessage($id){
+        $user = Auth::guard('users')->user();
+        $data = $this->repo_base->findById($id);
+        if(!isset($data)){
+            return [
+                'is_failed' => true,
+                'code' => '004',
+                'message' => 'Group chat'
+            ];
+        }
+        if($user->id === $data->user_id){
+            $this->repo_base->update($data->id, [
+                'num_message_not_read_user' => 0
+            ]);
+        }else{
+            $this->repo_base->update($data->id, [
+                'num_message_not_read_actor' => 0
+            ]);
+        }
+        return [
+            'code' => '200',
+            'data' => $this->formatData($data)
+        ];
+    }
+
     public function generateColumn($inputs, $columns)
     {
         $sqlUtil = new SqlUtil();
