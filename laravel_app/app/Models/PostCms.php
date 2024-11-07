@@ -6,32 +6,11 @@ use App\Traits\UuidTrait;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use JeroenG\Explorer\Application\Aliased;
-use JeroenG\Explorer\Application\Explored;
-use JeroenG\Explorer\Application\IndexSettings;
-use Laravel\Scout\Searchable;
+use Nicolaslopezj\Searchable\SearchableTrait;
 
-class PostCms extends Model implements Explored, IndexSettings, Aliased
+class PostCms extends Model
 {
-    use HasFactory, SoftDeletes, UuidTrait, Searchable;
-    const pre_fix = 'POST';
-
-    //type
-    const TYPE_TUYEN_DUNG   = 1;
-    const TYPE_TIM_VIEC     = 2;
-    const TYPE_SELL         = 3;
-    const TYPE_BUY          = 4;
-
-    //type_salary
-    const TYPE_NGAY          = 1;
-    const TYPE_TUAN          = 2;
-    const TYPE_THANG         = 3;
-
-    //job_type
-    const JOB_TYPE_FULL_TIME      = 1;
-    const JOB_TYPE_PART_TIME      = 2;
-    const JOB_TYPE_ONLINE         = 3;
-
+    use HasFactory, SoftDeletes, UuidTrait, SearchableTrait;
     protected $table = 'posts';
 
     protected $primaryKey = 'id';
@@ -100,15 +79,17 @@ class PostCms extends Model implements Explored, IndexSettings, Aliased
         'status' => 'integer',
         'support' => 'integer',
         'display_type' => 'integer',
+        'type_salary' => 'integer',
+        'job_experience' => 'float',
+        'avg_revenue' => 'float',
         'location' => 'json'
-        // Add other casts as needed
     ];
 
     protected $searchable = [
-        'column' => [
-            'posts.reference' => 10,
-            'posts.title' => 10,
-            'posts.description' => 10
+        'columns' => [
+            'posts.reference' => 80,
+            'posts.title' => 70,
+            'posts.description' => 80
         ]
     ];
 
@@ -147,121 +128,5 @@ class PostCms extends Model implements Explored, IndexSettings, Aliased
     public function postIndustry()
     {
         return $this->belongsTo(PostIndustry::class);
-    }
-
-    public function searchableAs()
-    {
-        return 'posts_index';
-    }
-
-    public function mappableAs(): array
-    {
-        return [
-            'id' => 'keyword',
-            'title' => [
-                'type' => 'keyword',
-            ],
-            'description' => [
-                'type' => 'text',
-                'analyzer' => 'post_analyzer',
-            ],
-            "location" => [
-                'type' => 'geo_point',
-            ],
-            'created_at' => 'date',
-        ];
-    }
-
-    public function indexSettings(): array
-    {
-        return [
-            'index' => [
-                'number_of_shards' => 2,
-            ],
-            'analysis' => [
-                "char_filter" => [
-                    "vi_char_filter" => [
-                        "type" => "mapping",
-                        "mappings" => [
-                            "á => a",
-                            "à => a",
-                            "ả => a",
-                            "ã => a",
-                            "ạ => a",
-                            "ă => a",
-                            "ắ => a",
-                            "ằ => a",
-                            "ẳ => a",
-                            "ẵ => a",
-                            "ặ => a",
-                            "â => a",
-                            "ấ => a",
-                            "ầ => a",
-                            "ẩ => a",
-                            "ẫ => a",
-                            "ậ => a",
-                            "é => e",
-                            "è => e",
-                            "ẻ => e",
-                            "ẽ => e",
-                            "ẹ => e",
-                            "ê => e",
-                            "ế => e",
-                            "ề => e",
-                            "ể => e",
-                            "ễ => e",
-                            "ệ => e",
-                            "í => i",
-                            "ì => i",
-                            "ỉ => i",
-                            "ĩ => i",
-                            "ị => i",
-                            "ó => o",
-                            "ò => o",
-                            "ỏ => o",
-                            "õ => o",
-                            "ọ => o",
-                            "ô => o",
-                            "ố => o",
-                            "ồ => o",
-                            "ổ => o",
-                            "ỗ => o",
-                            "ộ => o",
-                            "ơ => o",
-                            "ớ => o",
-                            "ờ => o",
-                            "ở => o",
-                            "ỡ => o",
-                            "ợ => o",
-                            "ú => u",
-                            "ù => u",
-                            "ủ => u",
-                            "ũ => u",
-                            "ụ => u",
-                            "ư => u",
-                            "ứ => u",
-                            "ừ => u",
-                            "ử => u",
-                            "ữ => u",
-                            "ự => u",
-                            "ý => y",
-                            "ỳ => y",
-                            "ỷ => y",
-                            "ỹ => y",
-                            "ỵ => y",
-                            "đ => d",
-                        ],
-                    ]
-                ],
-                "analyzer" => [
-                    "post_analyzer" => [
-                        "type" => "custom",
-                        "tokenizer" => "vi_tokenizer",
-                        "char_filter" => ["vi_char_filter"],
-                        "filter" => ["lowercase"],
-                    ]
-                ],
-            ],
-        ];
     }
 }

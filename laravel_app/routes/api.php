@@ -33,6 +33,8 @@ use App\Http\Controllers\Api\PostApiController;
 use App\Http\Controllers\Api\PostIndustryApiController;
 use App\Http\Controllers\Api\PostAdvertisingApiController;
 use App\Http\Controllers\Api\PostExcelApiController;
+use App\Http\Controllers\Api\PostCmsApiController;
+use App\Http\Controllers\Api\ExportExcelApiController;
 
 
 Route::prefix("auth")->group(function () {
@@ -356,6 +358,21 @@ Route::group(['prefix' => 'v1'], function () {
         Route::group(['middleware' => ['auth:employees']], function(){
             Route::post('/import', [PostExcelApiController::class, 'import']);
         });
+    });
+
+    Route::group(['prefix' => 'postCms'], function(){
+        Route::group(['middleware' => ['auth:employees']], function(){
+            Route::put('/update/{id}', [PostCmsApiController::class, 'update']);
+            Route::get('/findById/{id}', [PostCmsApiController::class, 'findById']);
+            Route::delete('/destroy/{id}', [PostCmsApiController::class, 'destroy']);
+            Route::post('/search', [PostCmsApiController::class, 'search']);
+            // export excel
+            Route::post('/exportExcel', [PostCmsApiController::class, 'exportExcel']);
+        });
+    });
+
+    Route::group(['prefix' => 'exportExcels'], function(){
+        Route::get('/export/{path:[a-zA-Z0-9_]+\/[a-zA-Z0-9_].*}', [ExportExcelApiController::class, 'getExportFile']);
     });
 
     Route::group(['prefix' => 'post_industries'], function(){
