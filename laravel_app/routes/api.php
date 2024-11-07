@@ -380,7 +380,8 @@ Route::group(['prefix' => 'v1'], function () {
     });
 
     Route::group(['prefix' => 'exportExcels'], function(){
-        Route::get('/export/{path:[a-zA-Z0-9_]+\/[a-zA-Z0-9_].*}', [ExportExcelApiController::class, 'getExportFile']);
+        Route::get('/export/{path}', [ExportExcelApiController::class, 'getExportFile'])
+        ->where(['path' => '[a-zA-Z0-9_]+\/[a-zA-Z0-9_].*']);
     });
 
     Route::group(['prefix' => 'post_industries'], function(){

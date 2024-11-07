@@ -3,9 +3,8 @@
 namespace App\Http\Controllers\Api;
 
 use App\Services\Excel\ExcelExportService;
-use Illuminate\Http\Request;
 
-class ExportExcelApiController extends AppBaseController
+class ExportExcelApiController
 {
     protected $service_base;
 
@@ -16,8 +15,7 @@ class ExportExcelApiController extends AppBaseController
         $this->service_base         = $service_base;
     }
 
-    public function getExportFile($path, Request $request){
-        $inputs = $request->all();
-        return $this->service_base->getExportFile($inputs, $path);
+    public function getExportFile($path){
+        return $this->service_base->getExportFile($path);
     }
 }
