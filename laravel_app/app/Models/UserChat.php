@@ -49,6 +49,10 @@ class UserChat extends Model
         return self::search($term);
     }
 
+    public function actor(){
+        return $this->belongsTo(User::class, 'actor_id');
+    }
+
     public function userGroupChat(){
         return $this->belongsTo(UserGroupChat::class);
     }

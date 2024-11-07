@@ -7,8 +7,11 @@ use App\Models\UserChatStatus;
 use App\Models\UserGroupChatStatus;
 use App\Repositories\Interfaces\PostRepositoryInterface;
 use App\Repositories\Interfaces\UserChatRepositoryInterface;
+use App\Repositories\Interfaces\UserChatStatusRepositoryInterface;
 use App\Repositories\Interfaces\UserGroupChatRepositoryInterface;
+use App\Repositories\Interfaces\UserGroupChatStatusRepositoryInterface;
 use App\Services\Base\BaseService;
+use App\Utils\SqlUtil;
 use Illuminate\Support\Facades\Auth;
 
 class UserChatService extends BaseService
@@ -16,18 +19,24 @@ class UserChatService extends BaseService
     protected $repo_base;
     protected $repo_post;
     protected $repo_user_group_chat;
+    protected $repo_user_chat_status;
+    protected $repo_user_group_chat_status;
     protected $with;
 
     public function __construct(
         UserChatRepositoryInterface $repo_base,
         PostRepositoryInterface $repo_post,
-        UserGroupChatRepositoryInterface $repo_user_group_chat
+        UserGroupChatRepositoryInterface $repo_user_group_chat,
+        UserGroupChatStatusRepositoryInterface $repo_user_group_chat_status,
+        UserChatStatusRepositoryInterface $repo_user_chat_status
     )
     {
         $this->repo_base = $repo_base;
         $this->repo_post = $repo_post;
         $this->repo_user_group_chat = $repo_user_group_chat;
-        $this->with = [];
+        $this->repo_user_chat_status = $repo_user_chat_status;
+        $this->repo_user_group_chat_status = $repo_user_group_chat_status;
+        $this->with = ['actor'];
     }
 
     public function getModelName()
@@ -74,11 +83,25 @@ class UserChatService extends BaseService
     }
 
     public function deleteMessage($id){
+        $user = Auth::guard('users')->user();
+//        $data = $this->repo_base->findById($id);
+//        if (!isset($data)) {
+//            return ['code' => '004', 'message' => $this->getModelName()];
+//        }
+        $data =$this->repo_user_chat_status->findOneBy([
+            'message_id' => $id,
+            'user_id' => $user->id
+        ]);
+        if(isset($data)){
+            $data->update([
+                'status' => UserChatStatus::STATUS_UNACTIVE
+            ]);
+        }
 
-    }
-
-    public function searchApp($id){
-
+        return [
+            'code' => '200',
+            'data' => []
+        ];
     }
 
     public function getUserGroupChat($post, $user_id){
@@ -102,6 +125,16 @@ class UserChatService extends BaseService
             UserGroupChatStatus::create([
                 'user_group_chat_id' => $user_group_chat->id,
                 'user_id' => $post->user_id,
+                'status' => UserGroupChatStatus::STATUS_ACTIVE
+            ]);
+        }
+        $user_group_chat_status = $this->repo_user_group_chat_status->findOneBy([
+            'user_group_chat_id' => $user_group_chat->id,
+            'user_id' => $user_id,
+            'status' => UserGroupChatStatus::STATUS_UNACTIVE
+        ]);
+        if(isset($user_group_chat_status)){
+            $user_group_chat_status->update([
                 'status' => UserGroupChatStatus::STATUS_ACTIVE
             ]);
         }
@@ -153,10 +186,50 @@ class UserChatService extends BaseService
         ];
     }
 
+    public function searchApp($inputs){
+        $user = Auth::guard('users')->user();
+        $user_group_chat = $this->repo_user_group_chat->findOneBy(['post_id' => $inputs['filter']['post_id']]);
+        if(!isset($user_group_chat) || !isset($user)){
+            return [
+                "code" => '200',
+                'data' => [
+                    "data" => [],
+                    'total' => 0
+                ]
+            ];
+        }
+        $messages = $this->repo_user_chat_status->findWhereBy([
+            'user_group_chat_id' =>$user_group_chat->id,
+            'user_id' => $user->id,
+            'status' => UserChatStatus::STATUS_ACTIVE
+        ]);
+        $ids = [];
+        foreach ($messages as $message){
+            array_push($ids, $message->message_id);
+        }
+        if(count($ids) === 0){
+            return [
+                "code" => '200',
+                'data' => [
+                    "data" => [],
+                    'total' => 0
+                ]
+            ];
+        }
+
+        $inputs['filter']['user_group_chat_id'] = $user_group_chat->id;
+        $inputs['filter']['ids'] = $ids;
+        return $this->search($inputs);
+    }
+
     public function generateColumn($inputs, $columns)
     {
-        if(isset($inputs['user_group_chat_id'])){
+        $sqlUtil = new SqlUtil();
+        if(isset($inputs['user_group_chat_id']) && $inputs['user_group_chat_id'] !== 'all'){
             array_push($columns, "{$this->getTableName()}.user_group_chat_id = '{$inputs['user_group_chat_id']}'");
+        }
+        if(isset($inputs['ids']) && count($inputs['ids']) > 0 && $inputs['ids'] !== 'all'){
+            array_push($columns, "{$this->getTableName()}.id in ({$sqlUtil->setStringFromArray($inputs['ids'])})");
         }
         return $columns;
     }

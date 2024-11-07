@@ -36,7 +36,7 @@ class UserCommentApiController extends BaseApiController
 
     public function searchApp($id, Request $request){
         $inputs = $request->all();
-        $resp = $this->service_base->search($id, $inputs['data']);
+        $resp = $this->service_base->searchApp($id, $inputs['data']);
         if($resp['code'] !== '200'){
             return $this->sendError($resp['message'], $resp['code']);
         }

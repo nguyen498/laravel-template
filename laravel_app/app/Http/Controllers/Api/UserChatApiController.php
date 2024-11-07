@@ -28,19 +28,18 @@ class UserChatApiController extends BaseApiController
 
     public function searchByUser(Request $request){
         $inputs = $request->all();
-        $resp = $this->service_base->search($inputs['data']);
+        $resp = $this->service_base->searchApp($inputs['data']);
         if($resp['code'] !== '200'){
             return $this->sendError($resp['message'], $resp['code']);
         }
         return $this->sendResponse($resp['data'], 'Search success');
     }
 
-    public function deleteMessage(Request $request){
-        $inputs = $request->all();
-        $resp = $this->service_base->deleteMessage($inputs['data']);
+    public function deleteMessage($id){
+        $resp = $this->service_base->deleteMessage($id);
         if($resp['code'] !== '200'){
             return $this->sendError($resp['message'], $resp['code']);
         }
-        return $this->sendResponse($resp['data'], 'Search success');
+        return $this->sendResponse($resp['data'], 'Delete success');
     }
 }
