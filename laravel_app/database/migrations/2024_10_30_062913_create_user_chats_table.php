@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('user_chats', function (Blueprint $table) {
             $table->uuid('id')->primary(); // UUID as primary key
             $table->uuid('actor_id'); // Actor ID (the user ID)
-            $table->string('actor_name', 100); // Actor name
+            $table->string('actor_name', 100)->nullable(); // Actor name
             $table->longText('message'); // Message content
             $table->uuid('user_group_chat_id'); // Group chat ID
             $table->dateTime('expire_date')->nullable(); // Expiry time

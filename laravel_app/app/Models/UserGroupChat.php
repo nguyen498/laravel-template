@@ -10,7 +10,7 @@ use Nicolaslopezj\Searchable\SearchableTrait;
 
 class UserGroupChat extends Model
 {
-    use HasFactory, SoftDeletes, UuidTrait, SearchableTrait;
+    use HasFactory, UuidTrait, SearchableTrait;
 
     protected $table = 'user_group_chats';
     public $primaryKey = 'id';

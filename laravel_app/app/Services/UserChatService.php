@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\UserChat;
+use App\Models\UserChatStatus;
 use App\Models\UserGroupChatStatus;
 use App\Repositories\Interfaces\PostRepositoryInterface;
 use App\Repositories\Interfaces\UserChatRepositoryInterface;
@@ -40,7 +41,7 @@ class UserChatService extends BaseService
     }
 
     public function sendMessage($inputs){
-        $user = Auth::user();
+        $user = Auth::guard('users')->user();
         $validate = $this->checkInputs($inputs, null);
         if ($validate['is_failed']) {
             return $validate;
@@ -62,11 +63,8 @@ class UserChatService extends BaseService
 
         $user_group_chat = $this->getUserGroupChat($post, $user->id);
 
-        $data = $this->repo_base->create([
-            'user_group_chat' => $user_group_chat->id,
-            'message' => $inputs['message'],
-            'medias' => $inputs['medias'] ?? null
-        ]);
+        $data = $this->createUserChat($user_group_chat,$user->id, $inputs);
+
         $data = $this->repo_base->findById($data->id);
 
         return [
@@ -92,21 +90,44 @@ class UserChatService extends BaseService
             $user_group_chat = $this->repo_user_group_chat->create([
                 'actor_id' =>  $user_id,
                 'post_id' => $post->id,
-                'user_id' => $post->user_id
+                'user_id' => $post->user_id,
+                'title' => $post->title
             ]);
             UserGroupChatStatus::create([
-                'room_id' => $user_group_chat->id,
+                'user_group_chat_id' => $user_group_chat->id,
                 'user_id' => $user_id,
-                'is_deleted' => false
+                'status' => UserGroupChatStatus::STATUS_ACTIVE
             ]);
 
             UserGroupChatStatus::create([
-                'room_id' => $user_group_chat->id,
+                'user_group_chat_id' => $user_group_chat->id,
                 'user_id' => $post->user_id,
-                'is_deleted' => false
+                'status' => UserGroupChatStatus::STATUS_ACTIVE
             ]);
         }
         return $user_group_chat;
+    }
+
+    public function createUserChat($user_group_chat,$user_id, $inputs){
+        $data = $this->repo_base->create([
+            'user_group_chat_id' => $user_group_chat->id,
+            'actor_id' => $user_id,
+            'message' => $inputs['message'],
+            'medias' => isset($inputs['medias']) ? json_encode($inputs['medias']) : null
+        ]);
+        UserChatStatus::create([
+            'user_group_chat_id' => $user_group_chat->id,
+            'message_id' => $data->id,
+            'user_id' => $user_group_chat->actor_id,
+            'status' => UserChatStatus::STATUS_ACTIVE
+        ]);
+        UserChatStatus::create([
+            'user_group_chat_id' => $user_group_chat->id,
+            'message_id' => $data->id,
+            'user_id' => $user_group_chat->user_id,
+            'status' => UserChatStatus::STATUS_ACTIVE
+        ]);
+        return $data;
     }
 
     public function checkInputs($inputs, $id){

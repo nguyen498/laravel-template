@@ -10,6 +10,11 @@ class UserGroupChatStatus extends Model
 {
     use HasFactory, SoftDeletes;
 
+    //status
+    const STATUS_UNACTIVE     = 0;
+    const STATUS_ACTIVE       = 1;
+
+
     protected $table = 'user_group_chat_status';
     public $primaryKey = 'id';
 

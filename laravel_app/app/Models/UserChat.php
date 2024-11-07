@@ -10,7 +10,7 @@ use Nicolaslopezj\Searchable\SearchableTrait;
 
 class UserChat extends Model
 {
-    use HasFactory, SoftDeletes, SearchableTrait, UuidTrait;
+    use HasFactory, SearchableTrait, UuidTrait;
 
     protected $table = 'user_chats';
     public $primaryKey = 'id';
@@ -33,6 +33,7 @@ class UserChat extends Model
     protected $casts = [
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
+        'medias' => 'json',
         'expire_date' => 'datetime',
         'is_read' => 'boolean',
     ];
