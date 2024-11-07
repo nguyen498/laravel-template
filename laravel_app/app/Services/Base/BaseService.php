@@ -13,6 +13,7 @@ use App\Lib\Models\GeoDistance;
 use App\Lib\Models\MustNot;
 use App\Lib\Models\Prefix;
 use App\Lib\Models\QuerySort;
+use App\Lib\Models\RangeDate;
 use App\Utils\SqlUtil;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
@@ -548,6 +549,11 @@ abstract class BaseService
         if(isset($inputs["ranges"])) {
             foreach ($inputs["ranges"] as $range)
                 $search = $search->filter(new Range($range["field"], $range["option"]));
+        }
+
+        if(isset($inputs["date_ranges"])) {
+            foreach ($inputs["date_ranges"] as $range)
+                $search = $search->filter(new RangeDate($range["field"], $range["option"]));
         }
 
         if(isset($inputs["prefix"])) {

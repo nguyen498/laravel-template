@@ -173,6 +173,12 @@ class Post extends Model implements Explored, IndexSettings, Aliased
             "location" => [
                 'type' => 'geo_point',
             ],
+            'additional_infor' => [
+                'type' => 'keyword'
+            ],
+            'lease_agreement' => [
+                'type' => 'keyword'
+            ],
             'created_at' => 'date',
         ];
     }
