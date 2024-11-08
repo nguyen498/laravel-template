@@ -507,7 +507,7 @@ class PostService extends BaseService
                     'message' => 'Lease agreement'
                 ];
             }
-            $data['lease_agreement'] = json_encode($inputs['lease_agreement']);
+            $data['lease_agreement'] = $inputs['lease_agreement'];
             if(!isset($inputs['avg_revenue'])){
                 return [
                     'is_failed' => true,
@@ -532,6 +532,10 @@ class PostService extends BaseService
                 ];
             }
             $data['additional_infor'] = json_encode($inputs['additional_infor']);
+
+            $data['num_tables'] = $inputs['num_tables'];
+            $data['num_chairs'] = $inputs['num_chairs'];
+            $data['num_rooms'] = $inputs['num_rooms'];
         }
         else if ($inputs['type'] === Post::TYPE_SELL) {
             if(!isset($inputs['business_type'])){
@@ -625,6 +629,10 @@ class PostService extends BaseService
                 ];
             }
             $data['additional_infor'] = json_encode($inputs['additional_infor']);
+
+            $data['num_tables'] = $inputs['num_tables'];
+            $data['num_chairs'] = $inputs['num_chairs'];
+            $data['num_rooms'] = $inputs['num_rooms'];
         }
         $data['slug'] = Str::slug($data['title']);
         $reference = isset($inputs['reference']) && !empty($inputs['reference']) ? $inputs['reference'] : null;

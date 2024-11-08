@@ -85,7 +85,10 @@ class Post extends Model implements Explored, IndexSettings, Aliased
         'avg_revenue',
         'support',
         'additional_infor',
-        'location'
+        'location',
+        'num_tables',
+        'num_chairs',
+        'num_rooms'
     ];
 
     /**
@@ -100,7 +103,8 @@ class Post extends Model implements Explored, IndexSettings, Aliased
         'status' => 'integer',
         'support' => 'integer',
         'display_type' => 'integer',
-        'location' => 'json'
+        'location' => 'json',
+        'lease_agreement' => 'array',
         // Add other casts as needed
     ];
 
@@ -159,12 +163,75 @@ class Post extends Model implements Explored, IndexSettings, Aliased
         return 'posts_index';
     }
 
+    public function toSearchableArray()
+    {
+        // TODO: Implement toSearchableArray() method.
+        return [
+            'id' => $this->id ?? '',
+            'reference' => $this->reference ?? '',
+            'category_id' => $this->category_id ?? '',
+            'category_name' => $this->category_name ?? '',
+            'sub_category_id' => $this->sub_category_id ?? '',
+            'sub_category_name' => $this->sub_category_name ?? '',
+            'display_type' => $this->display_type ?? '',
+            'user_id' => $this->user_id ?? '',
+            'type' => $this->type ?? '',
+            'status' => $this->status ?? '',
+            'post_industry_id' => $this->post_industry_id ?? '',
+            'post_industry_name' => $this->post_industry_name ?? '',
+            'title' => $this->title ?? '',
+            'description' => $this->description ?? '',
+            'phone_number' => $this->phone_number ?? '',
+            'email' => $this->email ?? '',
+            'website' => $this->website ?? '',
+            'store_name' => $this->store_name ?? '',
+            'store_address' => $this->store_address ?? '',
+            'store_area' => $this->store_area ?? '',
+            'medias' => isset($this->medias) ? json_decode($this->medias, true) : '', // Chuyển từ JSON string thành mản ?? 'g
+            'slug' => $this->slug ?? '',
+            'work_position' => $this->work_position ?? '',
+            'avg_salary' => $this->avg_salary ?? '',
+            'min_salary' => $this->min_salary ?? '',
+            'max_salary' => $this->max_salary ?? '',
+            'type_salary' => $this->type_salary ?? '',
+            'job_type' => $this->job_type ?? '',
+            'job_contract' => $this->job_contract ?? '',
+            'job_time' =>  isset($this->job_time) ? json_decode($this->job_time, true) : '', // Dữ liệu dạng JSON sẽ được lưu thành array
+            'job_experience' => $this->job_experience ?? '',
+            'require_skill' =>  isset($this->require_skill) ? json_decode($this->require_skill, true) : '',
+            'advance_skill' =>  isset($this->advance_skill) ? json_decode($this->advance_skill, true) : '',
+            'job_environmental' => $this->job_environmental ?? '',
+            'business_type' => $this->business_type ?? '',
+            'facebook_name' => $this->facebook_name ?? '',
+            'facebook_url' => $this->facebook_url ?? '',
+            'instagram_name' => $this->instagram_name ?? '',
+            'instagram_url' => $this->instagram_url ?? '',
+            'facilities' => isset($this->facilities) ? json_decode($this->facilities) : '',
+            'num_employees' => $this->num_employees ?? '',
+            'price' => $this->price ?? '',
+            'lease_agreement' => isset($this->lease_agreement) ? json_decode($this->lease_agreement, true) : '', // Đảm bảo lưu dưới dạng array
+            'avg_revenue' => $this->avg_revenue ?? '',
+            'support' => $this->support ?? '',
+            'additional_infor' => isset($this->additional_infor) ? json_decode($this->additional_infor) : '',
+            'deleted_at' => $this->deleted_at ?? '',
+            'created_at' => $this->created_at ?? '',
+            'updated_at' => $this->updated_at ?? '',
+            'num_tables' => $this->num_tables ?? null,
+            'num_chairs' => $this->num_chairs ?? null,
+            'num_rooms' => $this->num_rooms ?? null
+        ];
+    }
+
     public function mappableAs(): array
     {
         return [
             'id' => 'keyword',
+            'sub_category_id' => 'keyword',
+            'category_id' => 'keyword',
+            'user_id' => 'keyword',
             'title' => [
-                'type' => 'keyword',
+                'type' => 'text',
+                'analyzer' => 'post_analyzer',
             ],
             'description' => [
                 'type' => 'text',
@@ -174,10 +241,10 @@ class Post extends Model implements Explored, IndexSettings, Aliased
                 'type' => 'geo_point',
             ],
             'additional_infor' => [
-                'type' => 'keyword'
+                'type' => 'keyword', // Cấu hình kiểu 'keyword' cho additional_infor
             ],
             'lease_agreement' => [
-                'type' => 'keyword'
+                'type' => 'keyword', // Cấu hình kiểu 'keyword' cho lease_agreement
             ],
             'created_at' => 'date',
         ];
