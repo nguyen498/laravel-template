@@ -12,9 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('posts', function (Blueprint $table) {
-            $table->integer('num_tables')->nullable();
-            $table->integer('num_chairs')->nullable();
-            $table->integer('num_rooms')->nullable();
+            $table->text('nearby_areas')->nullable();
         });
     }
 
@@ -25,9 +23,7 @@ return new class extends Migration
     {
         Schema::table('posts', function (Blueprint $table) {
             $table->dropColumn([
-                'num_tables',
-                'num_chairs',
-                'num_rooms'
+                'nearby_areas',
             ]);
         });
     }

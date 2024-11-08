@@ -524,18 +524,18 @@ class PostService extends BaseService
                 ];
             }
             $data['support'] = $inputs['support'];
-            if(!isset($inputs['additional_infor'])){
-                return [
-                    'is_failed' => true,
-                    'code' => '003',
-                    'message' => 'Additional information'
-                ];
-            }
-            $data['additional_infor'] = json_encode($inputs['additional_infor']);
+//            if(!isset($inputs['additional_infor'])){
+//                return [
+//                    'is_failed' => true,
+//                    'code' => '003',
+//                    'message' => 'Additional information'
+//                ];
+//            }
+//            $data['additional_infor'] = json_encode($inputs['additional_infor']);
 
-            $data['num_tables'] = $inputs['num_tables'];
-            $data['num_chairs'] = $inputs['num_chairs'];
-            $data['num_rooms'] = $inputs['num_rooms'];
+            if(isset($inputs['nearby_areas'])){
+                $data['nearby_areas'] = json_encode($inputs['nearby_areas']);
+            }
         }
         else if ($inputs['type'] === Post::TYPE_SELL) {
             if(!isset($inputs['business_type'])){
@@ -621,18 +621,18 @@ class PostService extends BaseService
             if(isset($inputs['support'])){
                 $data['support'] = $inputs['support'];
             }
-            if(!isset($inputs['additional_infor'])){
-                return [
-                    'is_failed' => true,
-                    'code' => '003',
-                    'message' => 'Additional information'
-                ];
-            }
-            $data['additional_infor'] = json_encode($inputs['additional_infor']);
+//            if(!isset($inputs['additional_infor'])){
+//                return [
+//                    'is_failed' => true,
+//                    'code' => '003',
+//                    'message' => 'Additional information'
+//                ];
+//            }
+//            $data['additional_infor'] = json_encode($inputs['additional_infor']);
 
-            $data['num_tables'] = $inputs['num_tables'];
-            $data['num_chairs'] = $inputs['num_chairs'];
-            $data['num_rooms'] = $inputs['num_rooms'];
+            if(isset($inputs['nearby_areas'])){
+                $data['nearby_areas'] = json_encode($inputs['nearby_areas']);
+            }
         }
         $data['slug'] = Str::slug($data['title']);
         $reference = isset($inputs['reference']) && !empty($inputs['reference']) ? $inputs['reference'] : null;
@@ -682,6 +682,9 @@ class PostService extends BaseService
         }
         if(isset($res['additional_infor'])){
             $res['additional_infor'] = json_decode($res['additional_infor'], true);
+        }
+        if(isset($res['nearby_areas'])){
+            $res['nearby_areas'] = json_decode($res['nearby_areas'], true);
         }
         return $res;
     }

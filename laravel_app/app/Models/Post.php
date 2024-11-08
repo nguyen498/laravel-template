@@ -216,9 +216,7 @@ class Post extends Model implements Explored, IndexSettings, Aliased
             'deleted_at' => $this->deleted_at ?? '',
             'created_at' => $this->created_at ?? '',
             'updated_at' => $this->updated_at ?? '',
-            'num_tables' => $this->num_tables ?? null,
-            'num_chairs' => $this->num_chairs ?? null,
-            'num_rooms' => $this->num_rooms ?? null
+            'nearby_areas' => isset($this->nearby_areas) ? json_decode($this->nearby_areas) : '',
         ];
     }
 
@@ -240,11 +238,27 @@ class Post extends Model implements Explored, IndexSettings, Aliased
             "location" => [
                 'type' => 'geo_point',
             ],
-            'additional_infor' => [
-                'type' => 'keyword', // Cấu hình kiểu 'keyword' cho additional_infor
+            "nearby_areas" => [
+                'type' => 'keyword',
             ],
             'lease_agreement' => [
-                'type' => 'keyword', // Cấu hình kiểu 'keyword' cho lease_agreement
+                'type' => 'object',
+                'properties' => [
+                    'money_rent' => ['type' => 'float'],
+                    'lease_remaining' => ['type' => 'integer'],
+                    'more_info' => ['type' => 'text'],
+                ]
+            ],
+            'facilities' => [
+                'type' => 'object',
+                'properties' => [
+                    'num_tables' => ['type' => 'integer'],
+                    'num_chairs' => ['type' => 'integer'],
+                    'num_rooms' => ['type' => 'integer'],
+                    'utilities' => [
+                        'type' => 'keyword'
+                    ],
+                ]
             ],
             'created_at' => 'date',
         ];

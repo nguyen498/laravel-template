@@ -14,6 +14,7 @@ use App\Lib\Models\MustNot;
 use App\Lib\Models\Prefix;
 use App\Lib\Models\QuerySort;
 use App\Lib\Models\RangeDate;
+use App\Lib\Models\TermsSet;
 use App\Utils\SqlUtil;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
@@ -527,7 +528,13 @@ abstract class BaseService
 
         if (isset($inputs["terms"])) {
             foreach ($inputs["terms"] as $term) {
-                $search = $search->should(new Terms($term["field"], $term["values"], $term["boost"] ?? 1));
+                $search = $search->must(new Terms($term["field"], $term["values"], $term["boost"] ?? 1));
+            }
+        }
+
+        if (isset($inputs["terms_set"])) {
+            foreach ($inputs["terms_set"] as $term) {
+                $search = $search->must(new TermsSet($term["field"], $term["values"]));
             }
         }
 
