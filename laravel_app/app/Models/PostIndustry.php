@@ -29,6 +29,7 @@ class PostIndustry extends Model
         'name',
         'description',
         'status',
+        'key'
     ];
 
     /**

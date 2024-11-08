@@ -224,6 +224,15 @@ class PostService extends BaseService
         }
         $data['sub_category_id'] = $inputs['sub_category_id'];
 
+        if(!isset($inputs['post_industry_id'])) {
+            return [
+                'is_failed' => true,
+                'code' => '003',
+                'message' => 'sub category'
+            ];
+        }
+        $data['post_industry_id'] = $inputs['post_industry_id'];
+
         $sub_category = $this->repo_sub_category->findById($data['sub_category_id'], ['category']);
         if(!isset($sub_category)){
             return [
@@ -237,12 +246,18 @@ class PostService extends BaseService
         $data['category_id'] = $sub_category->category->id;
         $data['category_name'] = $sub_category->category->name;
 
-        $post_industry = $this->repo_post_industry->findOneBy([
-            'sub_category_id' => $data['sub_category_id']
-        ]);
+        $post_industry = $this->repo_post_industry->findById($data['post_industry_id']);
+
         if(isset($post_industry)){
+            if($post_industry->sub_category_id !== $data['sub_category_id']){
+                return [
+                    'is_failed' => true,
+                    'code' => '008',
+                    'message' => 'Post industry'
+                ];
+            }
             $data['post_industry_id'] = $post_industry->id;
-            $data['post_industry_name'] = $post_industry->title;
+            $data['post_industry_name'] = $post_industry->name;
         }
 
         if(!isset($inputs['type'])){
