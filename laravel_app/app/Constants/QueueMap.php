@@ -10,4 +10,5 @@ class QueueMap
     const QUEUE_NOTIFICATION            = 'low';
     const QUEUE_TELEGRAM                = 'medium';
     const QUEUE_GENERATE_KEYWORD        = 'low';
+    const QUEUE_SYNC_FILTER_ELASTICSEARCH       = 'low';
 }

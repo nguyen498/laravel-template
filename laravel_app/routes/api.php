@@ -69,6 +69,7 @@ Route::group(['prefix' => 'v1'], function () {
         Route::post('/login', [UserApiController::class, 'login']);
         Route::post('/loginWithPassword', [UserApiController::class, 'loginWithPassword']);
         Route::post('/verifyOtp', [UserApiController::class, 'verifyOtp']);
+        Route::post('/registerPhone', [UserApiController::class, 'registerPhone']);
         Route::post('/registerWithPassword', [UserApiController::class, 'registerWithPassword']);
 
         Route::post('/forgetPassword', [UserApiController::class, 'forgetPassword']);

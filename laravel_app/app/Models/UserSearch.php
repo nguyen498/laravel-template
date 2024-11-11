@@ -20,11 +20,17 @@ class UserSearch extends Model
         'location',
         'data_search',
         'data_raw',
+        'category_id',
+        'sub_category_id',
+        'post_industry_id'
     ];
 
     protected $casts = [
         'id' => 'string',
         'user_id' => 'string',
+        'category_id' => 'string',
+        'sub_category_id' => 'string',
+        'post_industry_id' => 'string',
         'keyword' => 'string',
         'location' => 'string', // có thể dùng 'json' nếu cần
         'data_search' => 'string',

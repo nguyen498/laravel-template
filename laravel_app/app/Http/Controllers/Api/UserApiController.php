@@ -52,6 +52,15 @@ class UserApiController extends BaseApiController
         return $this->sendResponse($resp['data'], 'Verify Otp success');
     }
 
+    public function registerPhone(Request $request){
+        $inputs = $request->all();
+        $resp = $this->service_base->registerPhone($inputs['data']);
+        if($resp['code'] !== '200'){
+            return $this->sendError($resp['message'], $resp['code']);
+        }
+        return $this->sendResponse($resp['data'], 'Register phone success');
+    }
+
     public function registerWithPassword(Request $request){
         $inputs = $request->all();
         $resp = $this->service_base->registerWithPassword($inputs['data']);
