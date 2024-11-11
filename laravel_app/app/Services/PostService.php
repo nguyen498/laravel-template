@@ -5,16 +5,15 @@ namespace App\Services;
 use App\Constants\QueueMap;
 use App\Jobs\CreateKeywordJob;
 use App\Jobs\DeleteKeywordJob;
-use App\Models\FilterElasticsearch;
+use App\Jobs\SyncFilterElasticsearch;
 use App\Models\Post;
-use App\Models\UserRecentSearch;
-use App\Models\UserSearch;
 use App\Repositories\Interfaces\PostIndustryRepositoryInterface;
 use App\Repositories\Interfaces\PostRepositoryInterface;
 use App\Repositories\Interfaces\SubCategoryRepositoryInterface;
 use App\Repositories\Interfaces\UserRecentSearchRepositoryInterface;
 use App\Repositories\Interfaces\UserSearchRepositoryInterface;
 use App\Services\Base\BaseService;
+use App\Services\Client\FilterElasticsearchService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
@@ -845,13 +844,21 @@ class PostService extends BaseService
 
             // Xử lý các ranges
             foreach ($inputs['ranges'] as $range) {
-                if (isset($range['field'], $range['values']) && isset($rangeFields[$range['field']])) {
-                    $data[$rangeFields[$range['field']]] = $range['values'];
+                if (isset($range['field'], $range['option'])
+                    && isset($range['option']['lte'], $range['option']['gte'])
+                    && isset($rangeFields[$range['field']])
+                ) {
+                    $data[$rangeFields[$range['field']]] = $range['option'];
                 }
             }
+            $data['id'] = $filter->id;
+            $data['location'] = [
+                'lat' => $location['lat'],
+                'lon' => $location['lng']
+            ];
 
-
-//            $this->syncFilterElasticsearch($filter->id, $data);
+//            $this->syncFilterElasticsearch($data);
+            dispatch((new SyncFilterElasticsearch($data))->onQueue(QueueMap::QUEUE_SYNC_FILTER_ELASTICSEARCH));
         }
     }
 
@@ -878,25 +885,8 @@ class PostService extends BaseService
         $this->repo_user_recent_search->create($data);
     }
 
-    public function syncFilterElasticsearch($id, $inputs){
-        $data = new FilterElasticsearch(
-             $id,
-            $inputs['user_id'] ?? null,
-             $inputs['keyword'] ?? null,
-            $inputs['sub_category_id'] ?? null,
-             $inputs['category_id'] ?? null,
-             $inputs['post_industry_id'] ?? null,
-            isset($inputs['location']) ? json_decode($inputs['location'], true) : null,
-             isset($inputs['nearby_areas']) ? json_decode($inputs['nearby_areas'], true) : null,
-             isset($inputs['utilities']) ? json_decode($inputs['utilities'], true) : null,
-             isset($inputs['num_employees']) ? json_decode($inputs['num_employees'], true) : null,
-             isset($inputs['avg_revenue']) ? json_decode($inputs['avg_revenue'], true) : null,
-             isset($inputs['avg_revenue']) ? json_decode($inputs['avg_revenue'], true) : null,
-             isset($inputs['money_rent']) ? json_decode($inputs['money_rent'], true) : null,
-             isset($inputs['num_chairs']) ? json_decode($inputs['num_chairs'], true) : null,
-             isset($inputs['num_tables']) ? json_decode($inputs['num_tables'], true) : null,
-             isset($inputs['price']) ? json_decode($inputs['price'], true) : null,
-        );
-        $data->searchable();
+    public function syncFilterElasticsearch($inputs){
+        $elasticsearchService = app(FilterElasticsearchService::class);
+        $elasticsearchService->addToElasticsearch($inputs);
     }
 }

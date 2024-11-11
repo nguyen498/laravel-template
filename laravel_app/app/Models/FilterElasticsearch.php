@@ -2,69 +2,21 @@
 
 namespace App\Models;
 
+use Elasticsearch\ClientBuilder;
 use Illuminate\Database\Eloquent\Model;
 use JeroenG\Explorer\Application\Aliased;
 use JeroenG\Explorer\Application\Explored;
 use JeroenG\Explorer\Application\IndexSettings;
 use Laravel\Scout\Searchable;
 
-class FilterElasticsearch implements Explored, IndexSettings, Aliased
+class FilterElasticsearch
 {
-    use Searchable;
+    protected $client;
 
-    protected $id;
-    protected $user_id;
-    protected $keyword;
-    protected $sub_category_id;
-    protected $category_id;
-    protected $post_industry_id;
-    protected $location;
-    protected $nearby_areas;
-    protected $utilities;
-    protected $num_employees;
-    protected $lease_remaining;
-    protected $avg_revenue;
-    protected $money_rent;
-    protected $num_chairs;
-    protected $num_tables;
-    protected $price;
-
-    public function __construct(
-        $id,
-        $user_id,
-        $keyword,
-        $sub_category_id,
-        $category_id,
-        $post_industry_id,
-        $location,
-        $nearby_areas,
-        $utilities,
-        $num_employees,
-        $lease_remaining,
-        $avg_revenue,
-        $money_rent,
-        $num_chairs,
-        $num_tables,
-        $price,
-    ){
-        $this->id = $id;
-        $this->user_id = $user_id;
-        $this->keyword = $keyword;
-        $this->sub_category_id = $sub_category_id;
-        $this->category_id = $category_id;
-        $this->post_industry_id = $post_industry_id;
-        $this->location = $location;
-        $this->nearby_areas = $nearby_areas;
-        $this->utilities = $utilities;
-        $this->num_employees = $num_employees;
-        $this->lease_remaining = $lease_remaining;
-        $this->avg_revenue = $avg_revenue;
-        $this->money_rent = $money_rent;
-        $this->num_chairs = $num_chairs;
-        $this->num_tables = $num_tables;
-        $this->price = $price;
-       }
-
+    public function __construct(ClientBuilder $client)
+    {
+        $this->client = $client;
+    }
     // Định nghĩa index mà model này sẽ sử dụng trong Elasticsearch
     public function searchableAs(): string
     {
