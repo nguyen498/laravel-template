@@ -57,5 +57,14 @@ return [
             1 => 'Chưa đọc',
             2 => 'Đã đọc',
         ]
+    ],
+    'advertising' => [
+        'zone' => [
+            'type' => [
+                1 => 'Post boost',
+                2 => 'Post display on horizontal',
+                3 => 'Post display as popup',
+            ]
+        ]
     ]
 ];

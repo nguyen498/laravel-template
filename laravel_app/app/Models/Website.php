@@ -18,6 +18,9 @@ class Website extends Model
 
     protected $guarded = ['id'];
 
+    const STATUS_UNACTIVE   = 0;
+    const STATUS_ACTIVE     = 1;
+
     protected $fillable = [
         'url',
         'name',
