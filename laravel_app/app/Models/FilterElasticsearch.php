@@ -3,11 +3,6 @@
 namespace App\Models;
 
 use Elasticsearch\ClientBuilder;
-use Illuminate\Database\Eloquent\Model;
-use JeroenG\Explorer\Application\Aliased;
-use JeroenG\Explorer\Application\Explored;
-use JeroenG\Explorer\Application\IndexSettings;
-use Laravel\Scout\Searchable;
 
 class FilterElasticsearch
 {
