@@ -5,13 +5,16 @@ namespace App\Services;
 use App\Constants\QueueMap;
 use App\Jobs\CreateKeywordJob;
 use App\Jobs\DeleteKeywordJob;
+use App\Models\FilterElasticsearch;
 use App\Models\Post;
+use App\Models\UserRecentSearch;
+use App\Models\UserSearch;
 use App\Repositories\Interfaces\PostIndustryRepositoryInterface;
 use App\Repositories\Interfaces\PostRepositoryInterface;
 use App\Repositories\Interfaces\SubCategoryRepositoryInterface;
+use App\Repositories\Interfaces\UserRecentSearchRepositoryInterface;
+use App\Repositories\Interfaces\UserSearchRepositoryInterface;
 use App\Services\Base\BaseService;
-use App\Services\Client\KeywordClientService;
-use App\Utils\StringHelpers;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
@@ -21,17 +24,23 @@ class PostService extends BaseService
     protected $repo_base;
     protected SubCategoryRepositoryInterface $repo_sub_category;
     protected PostIndustryRepositoryInterface $repo_post_industry;
+    protected UserRecentSearchRepositoryInterface $repo_user_recent_search;
+    protected UserSearchRepositoryInterface $repo_user_search;
     protected $with;
 
     public function __construct(
         PostRepositoryInterface $repo_base,
         SubCategoryRepositoryInterface $repo_sub_category,
         PostIndustryRepositoryInterface $repo_post_industry,
+        UserRecentSearchRepositoryInterface $repo_user_recent_search,
+        UserSearchRepositoryInterface $repo_user_search,
     )
     {
         $this->repo_base = $repo_base;
         $this->repo_sub_category = $repo_sub_category;
         $this->repo_post_industry = $repo_post_industry;
+        $this->repo_user_recent_search = $repo_user_recent_search;
+        $this->repo_user_search = $repo_user_search;
         $this->with = [];
     }
 
@@ -117,6 +126,53 @@ class PostService extends BaseService
         return [
             'code' => '200',
             'message' => 'Deleted successfully'
+        ];
+    }
+
+    public function searchElastic($inputs)
+    {
+        $user = Auth::guard('users')->user();
+        $inputs["limit"] = $inputs["limit"] ?? 1000;
+        $inputs["search"] = $inputs["search"] ?? "";
+        $isSelect = $inputs["is_select"] ?? 1;
+
+        $search = $this->setSearchElastic($inputs);
+
+        if ($isSelect === 2 || $isSelect === 3) {
+            $dataRaw = $search->paginateRaw($inputs["limit"]);
+            $datasArray = [];
+            foreach ($dataRaw->items() as $i) {
+                $datasArray = $datasArray + $i["hits"]["hits"];
+            }
+
+            $datasLookup = array_map(fn($item) => array_merge(
+                $item["_source"],
+                !empty ($item['sort']) ? ['sort' => $item['sort'][0]] : []
+            ), $datasArray);
+
+            if ($isSelect === 2) {
+                $datas = $dataRaw->setCollection(collect($datasLookup));
+            } else {
+                $dataPaginate = $search->paginate($inputs["limit"]);
+                $dataArrayMer = [];
+                foreach ($dataPaginate->items() as $index => $paginateItem) {
+                    $dataArrayMer[] = array_merge($paginateItem->getAttributes(), $datasLookup[$index]);
+                }
+                $datas = $dataPaginate->setCollection(collect($dataArrayMer));
+            }
+        } else {
+            $dataPaginate = $search->paginate($inputs["limit"]);
+            $datas = $dataPaginate;
+        }
+
+        if(isset($inputs['is_save_search']) && $inputs['is_save_search'] === true){
+            $this->saveSavedSearchUser($inputs, $user);
+        }
+        $this->saveRecentSearchUser($inputs, $user);
+
+        return [
+            "code" => "200",
+            "data" => $datas
         ];
     }
 
@@ -737,5 +793,110 @@ class PostService extends BaseService
             array_push($columns, $this->getTableName() . ".num_employees = '{$inputs['num_employees']}'");
         }
         return $columns;
+    }
+
+    protected function saveSavedSearchUser($inputs, $user){
+        if(isset($inputs['filter']['field']) && $inputs['filter']['field'] === 'category_id'){
+            $data= [];
+            $data['user_id'] = $user->id;
+            if(isset($inputs['multi_match']) && isset($inputs['multi_match']['value'])){
+                $data['keyword'] = $inputs['multi_match']['value'];
+            }
+            $location = null;
+            if(isset($inputs['geo_distance']) && isset($inputs['geo_distance']['location'])){
+                if(isset($inputs['geo_distance']['location']['lat'])){
+                    $location['lat'] = $inputs['geo_distance']['location']['lat'];
+                }
+                if(isset($inputs['geo_distance']['location']['lon'])){
+                    $location['lng'] = $inputs['geo_distance']['location']['lon'];
+                }
+            }
+            if(isset($location)){
+                $data['location'] = json_encode($location, JSON_UNESCAPED_UNICODE);
+            }
+            $data['data_search'] = json_encode($inputs, JSON_UNESCAPED_UNICODE);
+
+            $filter = $this->repo_user_search->create($data);
+
+            if(isset($inputs['filter'])){
+                $data['category_id'] = $inputs['filter']['value'];
+            }
+
+            // Khởi tạo mảng ánh xạ các field với các key trong $data
+            $termFields = [
+                'sub_category_id' => 'sub_category_id',
+                'post_industry_id' => 'post_industry_id',
+            ];
+
+            $rangeFields = [
+                'num_employees' => 'num_employees',
+                'avg_revenue' => 'avg_revenue',
+                'lease_agreement.lease_remaining' => 'lease_remaining',
+                'facilities.num_chairs' => 'num_chairs',
+                'facilities.num_tables' => 'num_tables',
+            ];
+
+            // Xử lý các terms
+            foreach ($inputs['terms'] as $term) {
+                if (isset($term['field'], $term['values']) && isset($termFields[$term['field']])) {
+                    $data[$termFields[$term['field']]] = $term['values'];
+                }
+            }
+
+            // Xử lý các ranges
+            foreach ($inputs['ranges'] as $range) {
+                if (isset($range['field'], $range['values']) && isset($rangeFields[$range['field']])) {
+                    $data[$rangeFields[$range['field']]] = $range['values'];
+                }
+            }
+
+
+//            $this->syncFilterElasticsearch($filter->id, $data);
+        }
+    }
+
+    protected function saveRecentSearchUser($inputs, $user){
+        $data= [];
+        $data['user_id'] = $user->id;
+        if(isset($inputs['multi_match']) && isset($inputs['multi_match']['value'])){
+            $data['keyword'] = $inputs['multi_match']['value'];
+        }
+        $location = null;
+        if(isset($inputs['geo_distance']) && isset($inputs['geo_distance']['location'])){
+            if(isset($inputs['geo_distance']['location']['lat'])){
+                $location['lat'] = $inputs['geo_distance']['location']['lat'];
+            }
+            if(isset($inputs['geo_distance']['location']['lon'])){
+                $location['lng'] = $inputs['geo_distance']['location']['lon'];
+            }
+        }
+        if(isset($location)){
+            $data['location'] = json_encode($location, JSON_UNESCAPED_UNICODE);
+        }
+        $data['data_search'] = json_encode($inputs, JSON_UNESCAPED_UNICODE);
+
+        $this->repo_user_recent_search->create($data);
+    }
+
+    public function syncFilterElasticsearch($id, $inputs){
+        $data = new FilterElasticsearch(
+             $id,
+            $inputs['user_id'] ?? null,
+             $inputs['keyword'] ?? null,
+            $inputs['sub_category_id'] ?? null,
+             $inputs['category_id'] ?? null,
+             $inputs['post_industry_id'] ?? null,
+            isset($inputs['location']) ? json_decode($inputs['location'], true) : null,
+             isset($inputs['nearby_areas']) ? json_decode($inputs['nearby_areas'], true) : null,
+             isset($inputs['utilities']) ? json_decode($inputs['utilities'], true) : null,
+             isset($inputs['num_employees']) ? json_decode($inputs['num_employees'], true) : null,
+             isset($inputs['avg_revenue']) ? json_decode($inputs['avg_revenue'], true) : null,
+             isset($inputs['avg_revenue']) ? json_decode($inputs['avg_revenue'], true) : null,
+             isset($inputs['money_rent']) ? json_decode($inputs['money_rent'], true) : null,
+             isset($inputs['num_chairs']) ? json_decode($inputs['num_chairs'], true) : null,
+             isset($inputs['num_tables']) ? json_decode($inputs['num_tables'], true) : null,
+             isset($inputs['price']) ? json_decode($inputs['price'], true) : null,
+        );
+        $data->searchable();
     }
 }

@@ -75,6 +75,41 @@ class UserService extends BaseService
         ];
     }
 
+    public function registerPhone($inputs)
+    {
+        if (!isset($inputs['phone'])) {
+            return ['code' => '003', 'message' => 'Số điện thoại'];
+        }
+        if (!isset($inputs['name'])) {
+            return ['code' => '003', 'message' => 'Tên'];
+        }
+        $user = $this->repo_base->findOneBy([
+            'phone' => $inputs['phone']
+        ], [], ['*'], true);
+        if (!isset($user)) {
+            // generate otp to login with otp
+            return $this->register($inputs);
+        }
+        if (isset($user->deleted_at) && !empty($user->deleted_at)) {
+            return ['code' => '015', 'message' => ''];
+        }
+        if ($user->status === User::STATUS_UNACTIVE) {
+            return ['code' => '102', 'message' => ''];
+        }
+        // create token for user base on room
+        return [
+            'code' => '200',
+            'data' => [
+                'is_otp' => false,
+                'data' => [
+                    'phone' => $user->phone,
+                    'name' => $user->name,
+                    'email' => $user->email
+                ],
+            ]
+        ];
+    }
+
     // TODO: should send to Sms before return to FE
     public function register($inputs)
     {
@@ -118,6 +153,8 @@ class UserService extends BaseService
 
             $data = $this->repo_otp_attempt->create([
                 'phone' => isset($inputs['phone']) ? $inputs['phone'] : null,
+                'name' => isset($inputs['name']) ? $inputs['name'] : null,
+                'email' => isset($inputs['email']) ? $inputs['email'] : null,
                 'status' => OtpAttempt::NOT_USE,
                 'otp' => $inputs['otp'],
                 'valid_in' => (config('constants.sms.valid_in') * 60),
@@ -263,6 +300,8 @@ class UserService extends BaseService
 //            'name' => isset($inputs['name']) ? $inputs['name'] : null,
             'password' => bcrypt($inputs['password']),
             'phone' => $data_attempt->phone,
+            'name' => $data_attempt->name ?? null,
+            'email' => $data_attempt->email ?? null,
             'reference' => $this->generateReference(null),
             'type' => User::TYPE_PHONE,
             'status' => User::STATUS_ACTIVE

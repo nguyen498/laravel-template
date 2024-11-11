@@ -35,6 +35,7 @@ class User extends Authenticatable
         "reference",
         "first_name",
         "last_name",
+        "name",
         "phone",
         "description",
         "last_login",
@@ -75,6 +76,7 @@ class User extends Authenticatable
             "password" => "hashed",
             "reference" => "string",
             "first_name" => "string",
+            "name" => "string",
             "last_name" => "string",
             "phone" => "string",
             "description" => "string",
@@ -137,10 +139,10 @@ class User extends Authenticatable
         return $this->belongsTo(Account::class);
     }
 
-    public function getNameAttribute()
-    {
-        return $this->first_name.' '.$this->last_name;
-    }
+//    public function getNameAttribute()
+//    {
+//        return $this->first_name.' '.$this->last_name;
+//    }
 
     public function setPasswordAttribute($password)
     {

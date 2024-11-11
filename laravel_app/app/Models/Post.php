@@ -197,6 +197,7 @@ class Post extends Model implements Explored, IndexSettings, Aliased
             'job_type' => $this->job_type ?? '',
             'job_contract' => $this->job_contract ?? '',
             'job_time' =>  isset($this->job_time) ? json_decode($this->job_time, true) : '', // Dữ liệu dạng JSON sẽ được lưu thành array
+            'location' =>  isset($this->location) ? json_decode($this->location, true) : '', // Dữ liệu dạng JSON sẽ được lưu thành array
             'job_experience' => $this->job_experience ?? '',
             'require_skill' =>  isset($this->require_skill) ? json_decode($this->require_skill, true) : '',
             'advance_skill' =>  isset($this->advance_skill) ? json_decode($this->advance_skill, true) : '',

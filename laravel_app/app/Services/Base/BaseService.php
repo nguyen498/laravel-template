@@ -17,7 +17,6 @@ use App\Lib\Models\RangeDate;
 use App\Lib\Models\TermsSet;
 use App\Utils\SqlUtil;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use JeroenG\Explorer\Domain\Syntax\MatchAll;
 use JeroenG\Explorer\Domain\Syntax\Matching;
@@ -27,7 +26,6 @@ use JeroenG\Explorer\Domain\Syntax\QueryString;
 use JeroenG\Explorer\Domain\Syntax\Range;
 use JeroenG\Explorer\Domain\Syntax\Term;
 use JeroenG\Explorer\Domain\Syntax\Terms;
-use JeroenG\Explorer\Infrastructure\Scout\ElasticEngine;
 
 abstract class BaseService
 {
@@ -493,7 +491,7 @@ abstract class BaseService
         ];
     }
 
-    private function setSearchElastic($inputs) {
+    protected function setSearchElastic($inputs) {
         $inputs["limit"] = $inputs["limit"] ?? 1000;
         $inputs["search"] = $inputs["search"] ?? "";
         $isSelect = $inputs["is_select"] ?? 1;
@@ -572,8 +570,8 @@ abstract class BaseService
             $geo = $inputs["geo_distance"];
             $search = $search->filter(new GeoDistance(
                 $geo["distance"],
-                $geo["lat"],
-                $geo["lng"],
+                $geo['location']["lat"],
+                $geo['location']["lon"],
                 $geo["distance_type"] ?? GeoDistance::DISTANCE_TYPE_ARC,
                 $geo["field"] ?? GeoDistance::DEFAULT_FIELD
             ));
