@@ -829,8 +829,6 @@ class PostService extends BaseService
                 $filter = $this->repo_user_search->create($data);
             }
 
-
-
             // Khởi tạo mảng ánh xạ các field với các key trong $data
             $termFields = [
                 'sub_category_id' => 'sub_category_id',
