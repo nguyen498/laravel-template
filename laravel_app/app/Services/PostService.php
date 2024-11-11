@@ -815,11 +815,21 @@ class PostService extends BaseService
             }
             $data['data_search'] = json_encode($inputs, JSON_UNESCAPED_UNICODE);
 
-            $filter = $this->repo_user_search->create($data);
-
             if(isset($inputs['filter'])){
                 $data['category_id'] = $inputs['filter']['value'];
             }
+            $filter = $this->repo_user_search->findOneBy([
+                'category_id' => $data['category_id'],
+                'user_id' => $user->id
+            ]);
+
+            if(isset($filter)){
+                $filter = $this->repo_user_search->update($filter->id,$data);
+            }else{
+                $filter = $this->repo_user_search->create($data);
+            }
+
+
 
             // Khởi tạo mảng ánh xạ các field với các key trong $data
             $termFields = [
