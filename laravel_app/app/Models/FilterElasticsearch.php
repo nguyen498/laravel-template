@@ -60,14 +60,14 @@ class FilterElasticsearch
             "nearby_areas" => [
                 'type' => 'keyword',
             ],
-            'lease_agreement' => [
-                'type' => 'object',
-                'properties' => [
-                    'money_rent' => ['type' => 'float'],
-                    'lease_remaining' => ['type' => 'integer'],
-                    'more_info' => ['type' => 'text'],
-                ]
-            ],
+//            'lease_agreement' => [
+//                'type' => 'object',
+//                'properties' => [
+//                    'money_rent' => ['type' => 'float'],
+//                    'lease_remaining' => ['type' => 'integer'],
+//                    'more_info' => ['type' => 'text'],
+//                ]
+//            ],
             'utilities' => [
                 'type' => 'keyword',
             ],
