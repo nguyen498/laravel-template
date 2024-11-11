@@ -864,14 +864,14 @@ class PostService extends BaseService
                 'lat' => $location['lat'],
                 'lon' => $location['lng']
             ];
-
+            unset($data['data_search']);
 //            $this->syncFilterElasticsearch($data);
             dispatch((new SyncFilterElasticsearch($data))->onQueue(QueueMap::QUEUE_SYNC_FILTER_ELASTICSEARCH));
         }
     }
 
     protected function saveRecentSearchUser($inputs, $user){
-        $data= [];
+        $data = [];
         $data['user_id'] = $user->id;
         if(isset($inputs['multi_match']) && isset($inputs['multi_match']['value'])){
             $data['keyword'] = $inputs['multi_match']['value'];
