@@ -602,9 +602,15 @@ class UserService extends BaseService
     public function updateProfile($inputs)
     {
         $this->is_app = true;
-        $passenger = Auth::user();
+        $passenger = Auth::guard('users')->user();
         if (in_array($passenger->status, [User::STATUS_UNACTIVE])) {
             return ['code' => '101', 'message' => ''];
+        }
+        if(isset($inputs['medias'])){
+            $inputs['medias'] = json_encode($inputs['medias']);
+        }
+        if(isset($inputs['cover'])){
+            $inputs['cover'] = json_encode($inputs['cover']);
         }
         return $this->update($passenger->id, $inputs);
     }

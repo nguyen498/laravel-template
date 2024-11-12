@@ -333,7 +333,7 @@ class PostService extends BaseService
                     'message' => 'Work position'
                 ];
             }
-            $data['work_position'] = $inputs['work_position'];
+            $data['job']['work_position'] = $inputs['work_position'];
             if(!isset($inputs['avg_salary'])){
                 return [
                     'is_failed' => true,
@@ -341,7 +341,7 @@ class PostService extends BaseService
                     'message' => 'Average salary'
                 ];
             }
-            $data['avg_salary'] = $inputs['avg_salary'];
+            $data['job']['avg_salary'] = $inputs['avg_salary'];
             if(!isset($inputs['min_salary'])){
                 return [
                     'is_failed' => true,
@@ -349,7 +349,7 @@ class PostService extends BaseService
                     'message' => 'Min salary'
                 ];
             }
-            $data['min_salary'] = $inputs['min_salary'];
+            $data['job']['min_salary'] = $inputs['min_salary'];
             if(!isset($inputs['max_salary'])){
                 return [
                     'is_failed' => true,
@@ -357,7 +357,7 @@ class PostService extends BaseService
                     'message' => 'Max salary'
                 ];
             }
-            $data['max_salary'] = $inputs['max_salary'];
+            $data['job']['max_salary'] = $inputs['max_salary'];
             if(!isset($inputs['job_type'])){
                 return [
                     'is_failed' => true,
@@ -365,7 +365,7 @@ class PostService extends BaseService
                     'message' => 'Job type'
                 ];
             }
-            $data['job_type'] = $inputs['job_type'];
+            $data['job']['job_type'] = $inputs['job_type'];
             if(!isset($inputs['job_contract'])){
                 return [
                     'is_failed' => true,
@@ -373,7 +373,7 @@ class PostService extends BaseService
                     'message' => 'Job contract'
                 ];
             }
-            $data['job_contract'] = json_encode($inputs['job_contract'], JSON_UNESCAPED_UNICODE);
+            $data['job']['job_contract'] = json_encode($inputs['job_contract'], JSON_UNESCAPED_UNICODE);
             if(!isset($inputs['job_time'])){
                 return [
                     'is_failed' => true,
@@ -381,7 +381,7 @@ class PostService extends BaseService
                     'message' => 'Job time'
                 ];
             }
-            $data['job_time'] = json_encode($inputs['job_time']);
+            $data['job']['job_time'] = json_encode($inputs['job_time']);
             if(!isset($inputs['job_experience'])){
                 return [
                     'is_failed' => true,
@@ -389,7 +389,7 @@ class PostService extends BaseService
                     'message' => 'Job experience'
                 ];
             }
-            $data['job_experience'] = $inputs['job_experience'];
+            $data['job']['job_experience'] = $inputs['job_experience'];
             if(!isset($inputs['require_skill'])){
                 return [
                     'is_failed' => true,
@@ -397,7 +397,7 @@ class PostService extends BaseService
                     'message' => 'Require skill'
                 ];
             }
-            $data['require_skill'] = json_encode($inputs['require_skill']);
+            $data['job']['require_skill'] = json_encode($inputs['require_skill']);
             if(!isset($inputs['advance_skill'])){
                 return [
                     'is_failed' => true,
@@ -405,7 +405,7 @@ class PostService extends BaseService
                     'message' => 'Advance skill'
                 ];
             }
-            $data['advance_skill'] = json_encode($inputs['advance_skill']);
+            $data['job']['advance_skill'] = json_encode($inputs['advance_skill']);
             if(!isset($inputs['job_environmental'])){
                 return [
                     'is_failed' => true,
@@ -413,7 +413,7 @@ class PostService extends BaseService
                     'message' => 'Job environmental'
                 ];
             }
-            $data['job_environmental'] = json_encode($inputs['job_environmental']);
+            $data['job']['job_environmental'] = json_encode($inputs['job_environmental']);
         }
         else if($inputs['type'] === Post::TYPE_TIM_VIEC){
             if(!isset($inputs['work_position'])){
@@ -423,7 +423,7 @@ class PostService extends BaseService
                     'message' => 'Work position'
                 ];
             }
-            $data['work_position'] = $inputs['work_position'];
+            $data['job']['work_position'] = $inputs['work_position'];
             if(!isset($inputs['avg_salary'])){
                 return [
                     'is_failed' => true,
@@ -431,7 +431,7 @@ class PostService extends BaseService
                     'message' => 'Average salary'
                 ];
             }
-            $data['avg_salary'] = $inputs['avg_salary'];
+            $data['job']['avg_salary'] = $inputs['avg_salary'];
             if(!isset($inputs['min_salary'])){
                 return [
                     'is_failed' => true,
@@ -439,7 +439,7 @@ class PostService extends BaseService
                     'message' => 'Min salary'
                 ];
             }
-            $data['min_salary'] = $inputs['min_salary'];
+            $data['job']['min_salary'] = $inputs['min_salary'];
             if(!isset($inputs['max_salary'])){
                 return [
                     'is_failed' => true,
@@ -447,7 +447,7 @@ class PostService extends BaseService
                     'message' => 'Max salary'
                 ];
             }
-            $data['max_salary'] = $inputs['max_salary'];
+            $data['job']['max_salary'] = $inputs['max_salary'];
             if(!isset($inputs['job_type'])){
                 return [
                     'is_failed' => true,
@@ -455,7 +455,7 @@ class PostService extends BaseService
                     'message' => 'Job type'
                 ];
             }
-            $data['job_type'] = $inputs['job_type'];
+            $data['job']['job_type'] = $inputs['job_type'];
             if(!isset($inputs['job_contract'])){
                 return [
                     'is_failed' => true,
@@ -463,7 +463,7 @@ class PostService extends BaseService
                     'message' => 'Job contract'
                 ];
             }
-            $data['job_contract'] = json_encode($inputs['job_contract']);
+            $data['job']['job_contract'] = json_encode($inputs['job_contract']);
             if(!isset($inputs['job_time'])){
                 return [
                     'is_failed' => true,
@@ -471,7 +471,7 @@ class PostService extends BaseService
                     'message' => 'Job time'
                 ];
             }
-            $data['job_time'] = $inputs['job_time'];
+            $data['job']['job_time'] = $inputs['job_time'];
             if(!isset($inputs['job_experience'])){
                 return [
                     'is_failed' => true,
@@ -479,7 +479,7 @@ class PostService extends BaseService
                     'message' => 'Job experience'
                 ];
             }
-            $data['job_experience'] = $inputs['job_experience'];
+            $data['job']['job_experience'] = $inputs['job_experience'];
             if(!isset($inputs['require_skill'])){
                 return [
                     'is_failed' => true,
@@ -487,7 +487,7 @@ class PostService extends BaseService
                     'message' => 'Require skill'
                 ];
             }
-            $data['require_skill'] = json_encode($inputs['require_skill']);
+            $data['job']['require_skill'] = json_encode($inputs['require_skill']);
             if(!isset($inputs['advance_skill'])){
                 return [
                     'is_failed' => true,
@@ -495,7 +495,7 @@ class PostService extends BaseService
                     'message' => 'Advance skill'
                 ];
             }
-            $data['advance_skill'] = json_encode($inputs['advance_skill']);
+            $data['job']['advance_skill'] = json_encode($inputs['advance_skill']);
             if(!isset($inputs['job_environmental'])){
                 return [
                     'is_failed' => true,
@@ -503,7 +503,7 @@ class PostService extends BaseService
                     'message' => 'Job environmental'
                 ];
             }
-            $data['job_environmental'] = json_encode($inputs['job_environmental']);
+            $data['job']['job_environmental'] = json_encode($inputs['job_environmental']);
         }
         else if ($inputs['type'] === Post::TYPE_BUY){
             if(!isset($inputs['business_type'])){
@@ -513,7 +513,7 @@ class PostService extends BaseService
                     'message' => 'Business type'
                 ];
             }
-            $data['business_type'] = $inputs['business_type'];
+            $data['sale']['business_type'] = $inputs['business_type'];
             if(!isset($inputs['facebook_name'])){
                 return [
                     'is_failed' => true,
@@ -521,7 +521,7 @@ class PostService extends BaseService
                     'message' => 'Facebook name'
                 ];
             }
-            $data['facebook_name'] = $inputs['facebook_name'];
+            $data['sale']['facebook_name'] = $inputs['facebook_name'];
             if(!isset($inputs['facebook_url'])){
                 return [
                     'is_failed' => true,
@@ -529,7 +529,7 @@ class PostService extends BaseService
                     'message' => 'Facebook url'
                 ];
             }
-            $data['facebook_url'] = $inputs['facebook_url'];
+            $data['sale']['facebook_url'] = $inputs['facebook_url'];
             if(!isset($inputs['instagram_name'])){
                 return [
                     'is_failed' => true,
@@ -537,7 +537,7 @@ class PostService extends BaseService
                     'message' => 'Instagram name'
                 ];
             }
-            $data['instagram_name'] = $inputs['instagram_name'];
+            $data['sale']['instagram_name'] = $inputs['instagram_name'];
             if(!isset($inputs['instagram_url'])){
                 return [
                     'is_failed' => true,
@@ -545,7 +545,7 @@ class PostService extends BaseService
                     'message' => 'Instagram url'
                 ];
             }
-            $data['instagram_url'] = $inputs['instagram_url'];
+            $data['sale']['instagram_url'] = $inputs['instagram_url'];
             if(!isset($inputs['facilities'])){
                 return [
                     'is_failed' => true,
@@ -553,7 +553,7 @@ class PostService extends BaseService
                     'message' => 'Facilities'
                 ];
             }
-            $data['facilities'] = json_encode($inputs['facilities']);
+            $data['sale']['facilities'] = json_encode($inputs['facilities']);
             if(!isset($inputs['num_employees'])){
                 return [
                     'is_failed' => true,
@@ -561,7 +561,7 @@ class PostService extends BaseService
                     'message' => 'Number of employees'
                 ];
             }
-            $data['num_employees'] = $inputs['num_employees'];
+            $data['sale']['num_employees'] = $inputs['num_employees'];
             if(!isset($inputs['price'])){
                 return [
                     'is_failed' => true,
@@ -569,7 +569,7 @@ class PostService extends BaseService
                     'message' => 'Price'
                 ];
             }
-            $data['price'] = $inputs['price'];
+            $data['sale']['price'] = $inputs['price'];
             if(!isset($inputs['lease_agreement'])){
                 return [
                     'is_failed' => true,
@@ -577,7 +577,7 @@ class PostService extends BaseService
                     'message' => 'Lease agreement'
                 ];
             }
-            $data['lease_agreement'] = $inputs['lease_agreement'];
+            $data['sale']['lease_agreement'] = $inputs['lease_agreement'];
             if(!isset($inputs['avg_revenue'])){
                 return [
                     'is_failed' => true,
@@ -585,7 +585,7 @@ class PostService extends BaseService
                     'message' => 'Average revenue'
                 ];
             }
-            $data['avg_revenue'] = $inputs['avg_revenue'];
+            $data['sale']['avg_revenue'] = $inputs['avg_revenue'];
             if(!isset($inputs['support'])){
                 return [
                     'is_failed' => true,
@@ -593,7 +593,7 @@ class PostService extends BaseService
                     'message' => 'Support'
                 ];
             }
-            $data['support'] = $inputs['support'];
+            $data['sale']['support'] = $inputs['support'];
 //            if(!isset($inputs['additional_infor'])){
 //                return [
 //                    'is_failed' => true,
@@ -601,10 +601,10 @@ class PostService extends BaseService
 //                    'message' => 'Additional information'
 //                ];
 //            }
-//            $data['additional_infor'] = json_encode($inputs['additional_infor']);
+//            $data['sale]['additional_infor'] = json_encode($inputs['additional_infor']);
 
             if(isset($inputs['nearby_areas'])){
-                $data['nearby_areas'] = json_encode($inputs['nearby_areas']);
+                $data['sale']['nearby_areas'] = json_encode($inputs['nearby_areas']);
             }
         }
         else if ($inputs['type'] === Post::TYPE_SELL) {
@@ -615,7 +615,7 @@ class PostService extends BaseService
                     'message' => 'Business type'
                 ];
             }
-            $data['business_type'] = $inputs['business_type'];
+            $data['sale']['business_type'] = $inputs['business_type'];
             if(!isset($inputs['facebook_name'])){
                 return [
                     'is_failed' => true,
@@ -623,7 +623,7 @@ class PostService extends BaseService
                     'message' => 'Facebook name'
                 ];
             }
-            $data['facebook_name'] = $inputs['facebook_name'];
+            $data['sale']['facebook_name'] = $inputs['facebook_name'];
             if(!isset($inputs['facebook_url'])){
                 return [
                     'is_failed' => true,
@@ -631,7 +631,7 @@ class PostService extends BaseService
                     'message' => 'Facebook url'
                 ];
             }
-            $data['facebook_url'] = $inputs['facebook_url'];
+            $data['sale']['facebook_url'] = $inputs['facebook_url'];
             if(!isset($inputs['instagram_name'])){
                 return [
                     'is_failed' => true,
@@ -639,7 +639,7 @@ class PostService extends BaseService
                     'message' => 'Instagram name'
                 ];
             }
-            $data['instagram_name'] = $inputs['instagram_name'];
+            $data['sale']['instagram_name'] = $inputs['instagram_name'];
             if(!isset($inputs['instagram_url'])){
                 return [
                     'is_failed' => true,
@@ -647,7 +647,7 @@ class PostService extends BaseService
                     'message' => 'Instagram url'
                 ];
             }
-            $data['instagram_url'] = $inputs['instagram_url'];
+            $data['sale']['instagram_url'] = $inputs['instagram_url'];
             if(!isset($inputs['facilities'])){
                 return [
                     'is_failed' => true,
@@ -655,7 +655,7 @@ class PostService extends BaseService
                     'message' => 'Facilities'
                 ];
             }
-            $data['facilities'] = json_encode($inputs['facilities']);
+            $data['sale']['facilities'] = json_encode($inputs['facilities']);
             if(!isset($inputs['num_employees'])){
                 return [
                     'is_failed' => true,
@@ -663,7 +663,7 @@ class PostService extends BaseService
                     'message' => 'Number of employees'
                 ];
             }
-            $data['num_employees'] = $inputs['num_employees'];
+            $data['sale']['num_employees'] = $inputs['num_employees'];
             if(!isset($inputs['price'])){
                 return [
                     'is_failed' => true,
@@ -671,7 +671,7 @@ class PostService extends BaseService
                     'message' => 'Price'
                 ];
             }
-            $data['price'] = $inputs['price'];
+            $data['sale']['price'] = $inputs['price'];
             if(!isset($inputs['lease_agreement'])){
                 return [
                     'is_failed' => true,
@@ -679,7 +679,7 @@ class PostService extends BaseService
                     'message' => 'Lease agreement'
                 ];
             }
-            $data['lease_agreement'] = json_encode($inputs['lease_agreement']);
+            $data['sale']['lease_agreement'] = json_encode($inputs['lease_agreement']);
             if(!isset($inputs['avg_revenue'])){
                 return [
                     'is_failed' => true,
@@ -687,9 +687,9 @@ class PostService extends BaseService
                     'message' => 'Average revenue'
                 ];
             }
-            $data['avg_revenue'] = $inputs['avg_revenue'];
+            $data['sale']['avg_revenue'] = $inputs['avg_revenue'];
             if(isset($inputs['support'])){
-                $data['support'] = $inputs['support'];
+                $data['sale']['support'] = $inputs['support'];
             }
 //            if(!isset($inputs['additional_infor'])){
 //                return [
@@ -698,10 +698,10 @@ class PostService extends BaseService
 //                    'message' => 'Additional information'
 //                ];
 //            }
-//            $data['additional_infor'] = json_encode($inputs['additional_infor']);
+//            $data['sale]['additional_infor'] = json_encode($inputs['additional_infor']);
 
             if(isset($inputs['nearby_areas'])){
-                $data['nearby_areas'] = json_encode($inputs['nearby_areas']);
+                $data['sale']['nearby_areas'] = json_encode($inputs['nearby_areas']);
             }
         }
         $data['slug'] = Str::slug($data['title']);
