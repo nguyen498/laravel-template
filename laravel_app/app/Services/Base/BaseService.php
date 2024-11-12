@@ -306,6 +306,9 @@ abstract class BaseService
         if(isset($res['medias'])){
             $res['medias'] = json_decode($res['medias'], true);
         }
+        if(isset($res['cover'])){
+            $res['cover'] = json_decode($res['cover'], true);
+        }
         return $res;
     }
 

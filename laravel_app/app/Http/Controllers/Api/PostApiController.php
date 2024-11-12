@@ -17,6 +17,8 @@ class PostApiController extends BaseApiController
     }
 
     public function searchElastic(Request $request){
+//        return $this->sendResponse([], 'Search success');
+
         $inputs = $request->all();
         $resp = $this->service_base->searchElastic($inputs['data']);
         if($resp['code'] !== '200'){

@@ -136,7 +136,7 @@ class UserApiController extends BaseApiController
 
     public function updateProfile(Request $request){
         $inputs = $request->all();
-        $resp = $this->service_base->updateProfile($inputs);
+        $resp = $this->service_base->updateProfile($inputs['data']);
         if($resp['code'] !== '200'){
             return $this->sendError($resp['message'], $resp['code']);
         }

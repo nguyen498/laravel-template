@@ -35,7 +35,7 @@ class PostIndustryService extends BaseService
     }
     public function checkInputs($inputs, $id)
     {
-        if(!isset($inputs['title'])){
+        if(!isset($inputs['name'])){
             return [
                 'code' => '003',
                 'is_failed' => true,
@@ -46,7 +46,7 @@ class PostIndustryService extends BaseService
             return [
                 'code' => '003',
                 'is_failed' => true,
-                'message' => 'Logo'
+                'message' => 'Sub category'
             ];
         }
         $sub_category = $this->repo_sub_category->findById($inputs['sub_category_id']);
@@ -71,9 +71,9 @@ class PostIndustryService extends BaseService
     public function generateReference($reference) {
         if(!isset($reference)) {
             $now = Carbon::now();
-            $reference = $this->repo_base->getReferenceByPrefix($now->format('ymd'), 'reference',5, false);
-            $pre_fix = PostIndustry::pre_fix;
-            return "{$pre_fix}{$reference}";
+            $pre_fix = PostIndustry::pre_fix . $now->format('ymd');
+            $reference = $this->repo_base->getReferenceByPrefix($pre_fix, 'reference',5, false);
+            return "{$reference}";
         }
         return $reference;
     }

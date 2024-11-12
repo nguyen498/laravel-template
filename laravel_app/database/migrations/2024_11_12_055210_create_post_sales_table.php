@@ -27,6 +27,7 @@ return new class extends Migration
             $table->float('avg_revenue')->nullable(); // Average revenue
             $table->tinyInteger('support')->nullable(); // Null | 1: training for new owners | 2: discount
             $table->text('additional_infor')->nullable(); // Additional information
+            $table->text('nearby_areas')->nullable(); // Nearby areas information
             $table->timestamps();
         });
     }
