@@ -14,6 +14,7 @@ use App\Repositories\Interfaces\PostRepositoryInterface;
 use App\Repositories\Interfaces\ZoneRepositoryInterface;
 use App\Services\Base\BaseService;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Auth;
 
 class AdvertisingRequestService extends BaseService
 {
@@ -54,7 +55,7 @@ class AdvertisingRequestService extends BaseService
     }
 
     public function storeApp($inputs) {
-        $user = auth()->user();
+        $user = Auth::guard('users')->user();
         // double check post exist with status
         $this->is_app = isset($inputs['is_app']) ? $inputs['is_app'] : false;
 
@@ -63,6 +64,7 @@ class AdvertisingRequestService extends BaseService
             return $validate;
         }
         $input_data = $validate['inputs'];
+        // check exist
         if($this->repo_base->existByWhere([
             'post_id' => $input_data['post_id'],
             'user_id' => $user->id,
@@ -91,6 +93,8 @@ class AdvertisingRequestService extends BaseService
         if(in_array($advertising->status, [AdvertisingRequest::STATUS_CONFIRM, AdvertisingRequest::STATUS_DESTROY])){
             return [ 'code' => '008', 'message' => 'Yêu cầu' ];
         }
+
+        $employee = Auth::guard('employees')->user();
         if($inputs['status'] == AdvertisingRequest::STATUS_CONFIRM) {
             // create advertiser
             $advertiser = $this->repo_advertiser->findOneBy([
@@ -117,6 +121,7 @@ class AdvertisingRequestService extends BaseService
             if(!isset($campaign)) {
                 $campaign = $this->repo_campaign->create([
                     'name' => $advertising->user_name,
+                    'advertiser_id' => $advertiser->id,
                     'starts_at' => Carbon::now()->toDateString(),
                     'weight' => 1,
                     'status' => Campaign::STATUS_ACTIVE
@@ -141,11 +146,12 @@ class AdvertisingRequestService extends BaseService
                     'status' => Banner::STATUS_ACTIVE
                 ]);
             }
+            // TODO: xu ly zone banner
         }
 //        // update
-//        $this->repo_base->update($advertising->id, [
-//            'status' => $inputs['status']
-//        ]);
+        $this->repo_base->update($advertising->id, [
+            'status' => $inputs['status']
+        ]);
         $advertising = $this->repo_base->findById($advertising->id);
 
         return [
@@ -166,6 +172,9 @@ class AdvertisingRequestService extends BaseService
 
         if(!isset($inputs['type'])) {
             $inputs['type'] = AdvertisingRequest::TYPE_BOOST;
+        }
+        if(!isset($inputs['status'])) {
+            $inputs['status'] = AdvertisingRequest::STATUS_NEW;
         }
 
         $inputs['post_name'] = $post->name;

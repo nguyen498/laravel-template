@@ -35,6 +35,7 @@ use App\Http\Controllers\Api\PostAdvertisingApiController;
 use App\Http\Controllers\Api\PostExcelApiController;
 use App\Http\Controllers\Api\PostCmsApiController;
 use App\Http\Controllers\Api\ExportExcelApiController;
+use App\Http\Controllers\Api\CheckStatusApiController;
 
 
 Route::prefix("auth")->group(function () {
@@ -409,4 +410,6 @@ Route::group(['prefix' => 'v1'], function () {
         Route::delete('/destroy/{id}', [PostAdvertisingApiController::class, 'destroy']);
         Route::post('/search', [PostAdvertisingApiController::class, 'search']);
     });
+    // Check status
+    Route::get('/', [CheckStatusApiController::class, 'getStatus']);
 });
