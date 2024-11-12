@@ -13,6 +13,14 @@ class AdvertisingRequest extends Model
     protected $keyType = 'string';
     public $incrementing = false;
 
+    const STATUS_NEW        = 1;
+    const STATUS_CONFIRM    = 2;
+    const STATUS_DESTROY    = 3;
+
+    const TYPE_BOOST        = 1;
+    const TYPE_HORIZONTAL   = 2;
+    const TYPE_POPUP        = 3;
+
     protected $fillable = [
         'id',
         'user_id',

@@ -126,11 +126,18 @@ Route::group(['prefix' => 'v1'], function () {
     });
 
     Route::prefix("advertising_requests")->group(function () {
-        Route::post('/store', [AdvertisingRequestApiController::class, 'store']);
-        Route::put('/update/{id}', [AdvertisingRequestApiController::class, 'update']);
-        Route::get('/findById/{id}', [AdvertisingRequestApiController::class, 'findById']);
-        Route::delete('/destroy/{id}', [AdvertisingRequestApiController::class, 'destroy']);
-        Route::post('/search', [AdvertisingRequestApiController::class, 'search']);
+        Route::group(['middleware' => ['auth.employees']], function(){
+            Route::post('/store', [AdvertisingRequestApiController::class, 'store']);
+            Route::put('/update/{id}', [AdvertisingRequestApiController::class, 'update']);
+            Route::get('/findById/{id}', [AdvertisingRequestApiController::class, 'findById']);
+            Route::delete('/destroy/{id}', [AdvertisingRequestApiController::class, 'destroy']);
+            Route::post('/search', [AdvertisingRequestApiController::class, 'search']);
+            Route::post('/confirm', [AdvertisingRequestApiController::class, 'confirm']);
+        });
+
+        Route::group(['middleware' => ['auth.users']], function(){
+            Route::post('/storeApp', [AdvertisingRequestApiController::class, 'storeApp']);
+        });
     });
 
     Route::prefix("categories")->group(function () {

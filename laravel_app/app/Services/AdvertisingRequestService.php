@@ -2,20 +2,44 @@
 
 namespace App\Services;
 
+use App\Models\Advertiser;
 use App\Models\AdvertisingRequest;
+use App\Models\Banner;
+use App\Models\Campaign;
+use App\Repositories\Interfaces\AdvertiserRepositoryInterface;
 use App\Repositories\Interfaces\AdvertisingRequestRepositoryInterface;
+use App\Repositories\Interfaces\BannerRepositoryInterface;
+use App\Repositories\Interfaces\CampaignRepositoryInterface;
+use App\Repositories\Interfaces\PostRepositoryInterface;
+use App\Repositories\Interfaces\ZoneRepositoryInterface;
 use App\Services\Base\BaseService;
+use Carbon\Carbon;
 
 class AdvertisingRequestService extends BaseService
 {
     protected $repo_base;
+    protected $repo_post;
+    protected $repo_advertiser;
+    protected $repo_campaign;
+    protected $repo_banner;
+    protected $repo_zone;
     protected $with;
 
     public function __construct(
-        AdvertisingRequestRepositoryInterface $repo_base
+        AdvertisingRequestRepositoryInterface $repo_base,
+        PostRepositoryInterface $repo_post,
+        AdvertiserRepositoryInterface $repo_advertiser,
+        CampaignRepositoryInterface $repo_campaign,
+        BannerRepositoryInterface $repo_banner,
+        ZoneRepositoryInterface $repo_zone
     )
     {
         $this->repo_base = $repo_base;
+        $this->repo_post = $repo_post;
+        $this->repo_advertiser = $repo_advertiser;
+        $this->repo_campaign = $repo_campaign;
+        $this->repo_banner = $repo_banner;
+        $this->repo_zone = $repo_zone;
         $this->with = [];
     }
 
@@ -27,5 +51,127 @@ class AdvertisingRequestService extends BaseService
     public function getTableName()
     {
         return (new AdvertisingRequest())->getTable();
+    }
+
+    public function storeApp($inputs) {
+        $user = auth()->user();
+        // double check post exist with status
+        $this->is_app = isset($inputs['is_app']) ? $inputs['is_app'] : false;
+
+        $validate = $this->checkInputs($inputs, null);
+        if ($validate['is_failed']) {
+            return $validate;
+        }
+        $input_data = $validate['inputs'];
+        if($this->repo_base->existByWhere([
+            'post_id' => $input_data['post_id'],
+            'user_id' => $user->id,
+            'status' => AdvertisingRequest::STATUS_NEW
+        ], null)) {
+            return [ 'code' => '005', 'message' => 'Yêu cầu quảng cáo' ];
+        }
+        $input_data['user_id'] = $user->id;
+        $input_data['user_name'] = $user->name;
+        $input_data['user_phone'] = $user->phone;
+
+        $data = $this->repo_base->create($input_data);
+        $data = $this->repo_base->findById($data->id, $this->with);
+        return [
+            'code' => '200',
+            'data' => $this->formatData($data)
+        ];
+    }
+
+    public function confirm($inputs) {
+        if(!isset($inputs['id'])) { return [ 'code' => '003', 'message' => 'Id request' ]; }
+        if(!isset($inputs['status'])) { return [ 'code' => '003', 'message' => 'Trạng thái xác nhận' ]; }
+
+        $advertising = $this->repo_base->findById($inputs['id']);
+        if(!isset($advertising)) { return [ 'code' => '004', 'message' => 'Yêu cầu' ]; }
+        if(in_array($advertising->status, [AdvertisingRequest::STATUS_CONFIRM, AdvertisingRequest::STATUS_DESTROY])){
+            return [ 'code' => '008', 'message' => 'Yêu cầu' ];
+        }
+        if($inputs['status'] == AdvertisingRequest::STATUS_CONFIRM) {
+            // create advertiser
+            $advertiser = $this->repo_advertiser->findOneBy([
+                'user_id' => $advertising->user_id
+            ]);
+            if(!isset($advertiser)) {
+                $advertiser = $this->repo_advertiser->create([
+                    'name' => $advertising->user_name,
+                    'phone' => $advertising->phone,
+                    'user_id' => $advertising->user_id,
+                    'status' => Advertiser::STATUS_ACTIVE
+                ]);
+            } else {
+                $this->repo_advertiser->update($advertiser->id, [
+                    'status' => Advertiser::STATUS_ACTIVE
+                ]);
+            }
+            $advertiser = $this->repo_advertiser->findById($advertiser->id);
+            // create campaign
+            $campaign = $this->repo_campaign->findOneBy([
+                'advertiser_id' => $advertiser->id,
+                'status' => Campaign::STATUS_ACTIVE
+            ]);
+            if(!isset($campaign)) {
+                $campaign = $this->repo_campaign->create([
+                    'name' => $advertising->user_name,
+                    'starts_at' => Carbon::now()->toDateString(),
+                    'weight' => 1,
+                    'status' => Campaign::STATUS_ACTIVE
+                ]);
+            }
+            $zone = $this->repo_zone->findOneBy([
+                'type' => $advertising->type
+            ]);
+            // create banner
+            $banner = $this->repo_banner->findOneBy([
+                'post_id' => $advertising->post_id,
+                'campaign_id' => $campaign->id,
+                'status' => Banner::STATUS_ACTIVE
+            ]);
+
+            if(!isset($banner)) {
+                $banner = $this->repo_banner->create([
+                    'name' => $zone->name,
+                    'post_id' => $advertising->post_id,
+                    'campaign_id' => $campaign->id,
+                    'weight' => 1,
+                    'status' => Banner::STATUS_ACTIVE
+                ]);
+            }
+        }
+//        // update
+//        $this->repo_base->update($advertising->id, [
+//            'status' => $inputs['status']
+//        ]);
+        $advertising = $this->repo_base->findById($advertising->id);
+
+        return [
+            'code' => '200',
+            'data' => $this->formatData($advertising)
+        ];
+    }
+
+    public function checkInputs($inputs, $id)
+    {
+        if (isset($inputs['is_app'])) {
+            $this->is_app = $inputs['is_app'];
+        }
+        if(!isset($inputs['post_id'])) { return [ 'code' => '003', 'message' => 'post id' ]; }
+
+        $post = $this->repo_post->findById($inputs['post_id'], []);
+        if(!isset($post)) { return [ 'code' => '004', 'message' => 'Bài đăng' ]; }
+
+        if(!isset($inputs['type'])) {
+            $inputs['type'] = AdvertisingRequest::TYPE_BOOST;
+        }
+
+        $inputs['post_name'] = $post->name;
+        return [
+            'is_failed' => false,
+            'inputs' => $inputs
+        ];
     }
 }

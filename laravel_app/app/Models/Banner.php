@@ -15,6 +15,10 @@ class Banner extends Model
     protected $primaryKey = 'id';
     public $incrementing = false;
 
+    const STATUS_UNACTIVE           = 0;
+    const STATUS_ACTIVE             = 1;
+    const STATUS_EXPIRE             = 2;
+
     protected $guarded = ['id'];
 
     protected $fillable = [
