@@ -36,6 +36,7 @@ use App\Http\Controllers\Api\PostExcelApiController;
 use App\Http\Controllers\Api\PostCmsApiController;
 use App\Http\Controllers\Api\ExportExcelApiController;
 use App\Http\Controllers\Api\CheckStatusApiController;
+use App\Http\Controllers\Api\VisitorDetailApiController;
 
 
 Route::prefix("auth")->group(function () {
@@ -410,6 +411,14 @@ Route::group(['prefix' => 'v1'], function () {
         Route::delete('/destroy/{id}', [PostAdvertisingApiController::class, 'destroy']);
         Route::post('/search', [PostAdvertisingApiController::class, 'search']);
     });
+
+    Route::group(['prefix' => 'visitor_details'], function(){
+        Route::group(['middleware' => ['auth:users']], function(){
+            Route::post('/setViewClick', [VisitorDetailApiController::class, 'setViewClick']);
+        });
+    });
+
+
     // Check status
     Route::get('/', [CheckStatusApiController::class, 'getStatus']);
 });

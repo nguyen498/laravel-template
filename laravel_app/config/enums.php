@@ -10,6 +10,7 @@ return [
         'user' => 10,
         'employee' => 10,
     ],
+    'admin_reference' => 9999999999,
     'key_prefix' => [
         'format_date'=> 'ymd',
         'category'=> 'CAT',

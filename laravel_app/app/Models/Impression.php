@@ -36,6 +36,7 @@ class Impression extends Model
         'time_viewed' => 'string',
         'time_clicked' => 'string',
         'properties' => 'json',
+        'clicked' => 'bool'
 //        'created_by' => 'string',
 //        'created_by_name' => 'string',
 //        'updated_by' => 'string',

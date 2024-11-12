@@ -19,7 +19,7 @@ class PostJob extends Model
     const TYPE_SEARCH_JOB       = 'search_job';
 
     protected $fillable = [
-        'id',
+//        'id',
         'post_id',
         'type',
         'work_position',

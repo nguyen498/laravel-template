@@ -147,12 +147,12 @@ class AdvertisingRequestService extends BaseService
             // TODO: xu ly zone banner
             $zone->banners()->sync([$banner->id]);
         }
-//        // update
+        // update
         $this->repo_base->update($advertising->id, [
             'status' => $inputs['status']
         ]);
-        $advertising = $this->repo_base->findById($advertising->id);
 
+        $advertising = $this->repo_base->findById($advertising->id, $this->with);
         return [
             'code' => '200',
             'data' => $this->formatData($advertising)

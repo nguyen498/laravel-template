@@ -11,4 +11,9 @@ class PostSaleRepository extends BaseRepository implements PostSaleRepositoryInt
     {
         return PostSale::class;
     }
+
+    public function deleteByPostIds($postIds)
+    {
+        $this->model->whereIn('post_id', $postIds)->delete();
+    }
 }
