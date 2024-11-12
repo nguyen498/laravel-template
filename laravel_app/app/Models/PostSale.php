@@ -19,7 +19,7 @@ class PostSale extends Model
     const TYPE_BUY       = 'buy';
 
     protected $fillable = [
-        'id',
+//        'id',
         'post_id',
         'type',
         'business_type',

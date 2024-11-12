@@ -10,11 +10,17 @@ use App\Jobs\CreateKeywordJob;
 use App\Models\Category;
 use App\Models\Post;
 use App\Models\PostIndustry;
+use App\Models\PostJob;
+use App\Models\PostSale;
 use App\Models\SubCategory;
+use App\Models\User;
 use App\Repositories\Interfaces\CategoryRepositoryInterface;
 use App\Repositories\Interfaces\PostIndustryRepositoryInterface;
+use App\Repositories\Interfaces\PostJobRepositoryInterface;
 use App\Repositories\Interfaces\PostRepositoryInterface;
+use App\Repositories\Interfaces\PostSaleRepositoryInterface;
 use App\Repositories\Interfaces\SubCategoryRepositoryInterface;
+use App\Repositories\Interfaces\UserRepositoryInterface;
 use App\Utils\LogHelper;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Artisan;
@@ -26,21 +32,30 @@ use Shuchkin\SimpleXLSX;
 class PostExcelService
 {
     const ROW_SUPPORT = 9999999;
+    protected $repo_user;
     protected $repo_base;
     protected $repo_category;
     protected $repo_sub_category;
     protected $repo_post_industry;
+    protected $repo_post_sale;
+    protected $repo_post_job;
 
     public function __construct(
+        UserRepositoryInterface $repo_user,
         PostRepositoryInterface $repo_base,
         CategoryRepositoryInterface $repo_category,
         SubCategoryRepositoryInterface $repo_sub_category,
-        PostIndustryRepositoryInterface $repo_post_industry
+        PostIndustryRepositoryInterface $repo_post_industry,
+        PostSaleRepositoryInterface $repo_post_sale,
+        PostJobRepositoryInterface $repo_post_job
     ){
+        $this->repo_user            = $repo_user;
         $this->repo_base            = $repo_base;
         $this->repo_category        = $repo_category;
         $this->repo_sub_category    = $repo_sub_category;
         $this->repo_post_industry   = $repo_post_industry;
+        $this->repo_post_job        = $repo_post_job;
+        $this->repo_post_sale       = $repo_post_sale;
     }
 
     public function import($inputs) {
@@ -204,7 +219,15 @@ class PostExcelService
     }
 
     private function processRow($rows) {
-        $user = auth()->user();
+        $user = $this->repo_user->findOneBy([
+            'reference' => config('enums.admin_reference')
+        ]);
+        if(!$user) {
+            $user = $this->repo_user->create([
+                'status' => User::STATUS_UNACTIVE,
+                'reference' => config('enums.admin_reference')
+            ]);
+        }
         $model = new PostImport();
         $dictCategory = $this->dictCategory();
         $dictSubCategory = $this->dictSubCategory();
@@ -227,12 +250,22 @@ class PostExcelService
         $data = $model->formatModels($rows);
         $post_ids = [];
         $insert_posts = [];
+        $insert_sales = [];
+        $insert_jobs = [];
+
         $update_posts = [];
+        $update_sales = [];
+        $update_jobs = [];
 
         $insert_res = []; $update_res = [];
         $failed = [];
+
+        $job_fillables = (new PostJob())->getFillable();
+        $sale_fillables = (new PostSale())->getFillable();
+
         $num = count($posts) + 1;
         foreach($data as $dat) {
+            $type = $dat['type'];
             if(isset($dat['title']) && !empty($dat['title'])) {
                 unset($dat['stt']);
                 if(isset($user)) {
@@ -252,7 +285,23 @@ class PostExcelService
                 $dictPostIndustry = $subPostIndustry['dict'];
 
                 if(isset($dat['reference']) && isset($map_post[$dat['reference']])) {
+                    $dat['id'] = $map_post[$dat['reference']];
+                    if(isset($dat['sale_type']) && !empty($dat['sale_type'])) {
+                        $update_sales = $this->setExtentionInputs($dat, $sale_fillables, $update_sales);
+                    }
+
+                    if(isset($dat['jb_type']) && !empty($dat['jb_type'])) {
+                        $update_jobs = $this->setExtentionInputs($dat, $job_fillables, $update_jobs);
+                    }
+                    // should remove to prevent post can not update or insert
+                    $dat = $this->removeByExtention($dat, $sale_fillables);
+                    $dat = $this->removeByExtention($dat, $job_fillables);
+                    $dat = $this->removeByExtention($dat, ['sale_type', 'jb_type']);
+                    $dat['type'] = $type;
+                    $dat['start_date'] = Carbon::now()->toDateTimeString();
                     $update_posts[$map_post[$dat['reference']]] = $dat;
+                    // use for update sale, jobs
+                    array_push($post_ids, $map_post[$dat['reference']]);
                     array_push($update_res, [
                         'reference' => $dat['reference'],
                         'title' => $dat['title'],
@@ -261,6 +310,19 @@ class PostExcelService
 
                     $dat['id'] = (string) Str::orderedUuid();
                     $dat['reference'] = isset($dat['reference']) ? $dat['reference'] : $this->generateReference($num);
+                    if(isset($dat['sale_type']) && !empty($dat['sale_type'])) {
+                        $insert_sales = $this->setExtentionInputs($dat, $sale_fillables, $insert_sales);
+                    }
+
+                    if(isset($dat['jb_type']) && !empty($dat['jb_type'])) {
+                        $insert_jobs = $this->setExtentionInputs($dat, $job_fillables, $insert_jobs);
+                    }
+                    $dat = $this->removeByExtention($dat, $sale_fillables);
+                    $dat = $this->removeByExtention($dat, $job_fillables);
+                    $dat = $this->removeByExtention($dat, ['sale_type', 'jb_type']);
+
+                    $dat['type'] = $type;
+                    $dat['start_date'] = Carbon::now()->toDateTimeString();
                     array_push($insert_posts, $dat);
                     array_push($insert_res, [
                         'reference' => $dat['reference'],
@@ -279,28 +341,32 @@ class PostExcelService
         if(count($insert_posts) > 0) {
 //            Post::query()->insert($insert_posts);
             $this->repo_base->insertDBs($insert_posts);
-            foreach ($insert_posts as $insert_post){
-                if(isset($insert_post['id'])){
-                    $post = Post::find($insert_post['id']);
-                    $post->searchable();
-
-                    $text = "{$insert_post['title']}. {$insert_post['description']}";
-                    dispatch((new CreateKeywordJob($text, $insert_post['id']))->onQueue(QueueMap::QUEUE_GENERATE_KEYWORD));
-                }
+            // process import for sales
+            if(count($insert_sales) > 0) {
+                $this->repo_post_sale->insertDBs($insert_sales);
             }
+            // process import for jobs
+            if(count($insert_jobs) > 0) {
+                $this->repo_post_job->insertDBs($insert_jobs);
+            }
+            $this->processSyncToElastic($insert_posts);
         }
+
+
         if(count($update_posts) > 0) {
             $this->repo_base->updateMultiple($update_posts);
-//            Post::query()->upsert($update_posts, 'reference');
-            foreach ($update_posts as $update_post){
-                if(isset($update_post['reference'])){
-                    $post = Post::query()->where('reference', $update_post['reference'])->first();
-                    $post->searchable();
-
-                    $text = "{$update_post['title']}. {$update_post['description']}";
-                    dispatch((new CreateKeywordJob($text, $post->id))->onQueue(QueueMap::QUEUE_GENERATE_KEYWORD));
-                }
+            // process import for sales
+            if(count($update_sales) > 0) {
+                $this->repo_post_sale->deleteByPostIds($post_ids);
+                $this->repo_post_sale->insertDBs($update_sales);
             }
+            // process import for jobs
+            if(count($update_jobs) > 0) {
+                $this->repo_post_job->deleteByPostIds($post_ids);
+                $this->repo_post_job->insertDBs($update_jobs);
+            }
+//            Post::query()->upsert($update_posts, 'reference');
+            $this->processSyncToElastic($update_posts);
         }
 
         return [
@@ -319,7 +385,41 @@ class PostExcelService
                 ]
             ]
         ];
+    }
 
+    private function processSyncToElastic($sync_arrays) {
+        foreach ($sync_arrays as $arr){
+            if(isset($arr['id'])){
+                $post = Post::find($arr['id']);
+                $post->searchable();
+                $text = "{$arr['title']}. {$arr['description']}";
+                dispatch((new CreateKeywordJob($text, $arr['id']))->onQueue(QueueMap::QUEUE_GENERATE_KEYWORD));
+            }
+        }
+    }
+
+    private function removeByExtention($dat, $fillable) {
+        foreach ($fillable as $fill) {
+            unset($dat[$fill]);
+        }
+        return $dat;
+    }
+
+    private function setExtentionInputs($dat, $fillable, $insert) {
+        $inps = [
+            'id' => (string) Str::orderedUuid(),
+            'post_id' => $dat['id']
+        ];
+        foreach($dat as $key=>$val) {
+            if(($key == 'sale_type' || $key == 'jb_type') && !empty($val)) {
+                $inps['type'] = $val;
+            }
+            if(in_array($key, $fillable)) {
+                $inps[$key] = $val;
+            }
+        }
+        array_push($insert, $inps);
+        return $insert;
     }
 
     private function getPostIndustry($dat, $dict, $sub_category_id) {

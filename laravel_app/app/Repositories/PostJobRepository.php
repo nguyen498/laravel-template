@@ -11,4 +11,9 @@ class PostJobRepository extends BaseRepository implements PostJobRepositoryInter
     {
         return PostJob::class;
     }
+
+    public function deleteByPostIds($postIds)
+    {
+        $this->model->whereIn('post_id', $postIds)->delete();
+    }
 }

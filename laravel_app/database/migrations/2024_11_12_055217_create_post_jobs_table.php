@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('post_jobs', function (Blueprint $table) {
-            $table->uuid()->primary('id');
+            $table->uuid('id')->primary('id');
             $table->uuid('post_id')->index();
             $table->enum('type', ['recruitment', 'search_job'])->default('search_job');
             // Job recruitment information
