@@ -8,7 +8,9 @@ use App\Jobs\DeleteKeywordJob;
 use App\Jobs\SyncFilterElasticsearch;
 use App\Models\Post;
 use App\Repositories\Interfaces\PostIndustryRepositoryInterface;
+use App\Repositories\Interfaces\PostJobRepositoryInterface;
 use App\Repositories\Interfaces\PostRepositoryInterface;
+use App\Repositories\Interfaces\PostSaleRepositoryInterface;
 use App\Repositories\Interfaces\SubCategoryRepositoryInterface;
 use App\Repositories\Interfaces\UserRecentSearchRepositoryInterface;
 use App\Repositories\Interfaces\UserSearchRepositoryInterface;
@@ -25,6 +27,8 @@ class PostService extends BaseService
     protected PostIndustryRepositoryInterface $repo_post_industry;
     protected UserRecentSearchRepositoryInterface $repo_user_recent_search;
     protected UserSearchRepositoryInterface $repo_user_search;
+    protected PostJobRepositoryInterface $repo_post_job;
+    protected PostSaleRepositoryInterface $repo_post_sale;
     protected $with;
 
     public function __construct(
@@ -33,6 +37,8 @@ class PostService extends BaseService
         PostIndustryRepositoryInterface $repo_post_industry,
         UserRecentSearchRepositoryInterface $repo_user_recent_search,
         UserSearchRepositoryInterface $repo_user_search,
+        PostJobRepositoryInterface $repo_post_job,
+        PostSaleRepositoryInterface $repo_post_sale
     )
     {
         $this->repo_base = $repo_base;
@@ -40,7 +46,9 @@ class PostService extends BaseService
         $this->repo_post_industry = $repo_post_industry;
         $this->repo_user_recent_search = $repo_user_recent_search;
         $this->repo_user_search = $repo_user_search;
-        $this->with = [];
+        $this->repo_post_job = $repo_post_job;
+        $this->repo_post_sale = $repo_post_sale;
+        $this->with = ['postSale', 'postJob'];
     }
 
     public function getModelName()
@@ -62,8 +70,35 @@ class PostService extends BaseService
         }
         $input_data = $validate['inputs'];
         $input_data['user_id'] = $user->id;
+        $data_sale = null;
+        $data_job = null;
+        if(in_array($input_data['type'], [Post::TYPE_TIM_VIEC, Post::TYPE_TUYEN_DUNG])){
+            if(isset($input_data['job'])){
+                $data_job = $input_data['job'];
+                unset($input_data['job']);
+            }
+        }
+        else if(in_array($input_data['type'], [Post::TYPE_SELL, Post::TYPE_BUY])){
+            if(isset($input_data['sale'])){
+                $data_sale = $input_data['sale'];
+                unset($input_data['sale']);
+            }
+        }
 
+        $input_data['start_date'] = Carbon::now()->toDateTime();
+        $input_data['end_date'] = Carbon::now()->toDateTime();
         $data = $this->repo_base->create($input_data);
+
+        if(isset($data_job)){
+            $data_job['post_id'] = $data->id;
+            $data_job['id'] = Str::orderedUuid();
+            $this->repo_post_job->create($data_job);
+        }else if(isset($data_sale)){
+            $data_sale['post_id'] = $data->id;
+            $data_sale['id'] = Str::orderedUuid();
+            $this->repo_post_sale->create($data_sale);
+        }
+
         $data = $this->repo_base->findById($data->id, $this->with);
 
         $text = "{$data->title}. {$data->description}";
@@ -93,7 +128,35 @@ class PostService extends BaseService
             ];
         }
 
+        $data_sale = null;
+        $data_job = null;
+        if(in_array($input_data['type'], [Post::TYPE_TIM_VIEC, Post::TYPE_TUYEN_DUNG])){
+            if(isset($input_data['job'])){
+                $data_job = $input_data['job'];
+                unset($input_data['job']);
+            }
+        }
+        else if(in_array($input_data['type'], [Post::TYPE_SELL, Post::TYPE_BUY])){
+            if(isset($input_data['sale'])){
+                $data_sale = $input_data['sale'];
+                unset($input_data['sale']);
+            }
+        }
+
         $this->repo_base->update($id, $input_data);
+
+        if(isset($data_job)){
+            $data_job['post_id'] = $data->id;
+            $data_job['id'] = Str::orderedUuid();
+            $post_job = $this->repo_post_job->findOneBy(['post_id' => $data->id]);
+            $this->repo_post_job->update($post_job->id, $data_job);
+        }else if(isset($data_sale)){
+            $data_sale['post_id'] = $data->id;
+            $data_sale['id'] = Str::orderedUuid();
+            $post_sale = $this->repo_post_sale->findOneBy(['post_id' => $data->id]);
+            $this->repo_post_sale->update($post_sale->id, $data_sale);
+        }
+
         $data = $this->repo_base->findById($data->id, $this->with);
         $text = "{$data->title}. {$data->description}";
         dispatch((new CreateKeywordJob($text, $data->id))->onQueue(QueueMap::QUEUE_GENERATE_KEYWORD));
@@ -732,30 +795,36 @@ class PostService extends BaseService
         if(isset($res['medias'])){
             $res['medias'] = json_decode($res['medias'], true);
         }
-        if(isset($res['job_time'])){
-            $res['job_time'] = json_decode($res['job_time'], true);
+        if(isset($res['post_job'])){
+            if(isset($res['post_job']['job_time'])){
+                $res['post_job']['job_time'] = json_decode($res['post_job']['job_time'], true);
+            }
+            if(isset($res['post_job']['require_skill'])){
+                $res['post_job']['require_skill'] = json_decode($res['post_job']['require_skill'], true);
+            }
+            if(isset($res['post_job']['advance_skill'])){
+                $res['post_job']['advance_skill'] = json_decode($res['post_job']['advance_skill'], true);
+            }
+            if(isset($res['post_job']['job_environmental'])){
+                $res['post_job']['job_environmental'] = json_decode($res['post_job']['job_environmental'], true);
+            }
         }
-        if(isset($res['require_skill'])){
-            $res['require_skill'] = json_decode($res['require_skill'], true);
-        }
-        if(isset($res['advance_skill'])){
-            $res['advance_skill'] = json_decode($res['advance_skill'], true);
-        }
-        if(isset($res['job_environmental'])){
-            $res['job_environmental'] = json_decode($res['job_environmental'], true);
-        }
-        if(isset($res['lease_agreement'])){
-            $res['lease_agreement'] = json_decode($res['lease_agreement'], true);
-        }
-        if(isset($res['facilities'])){
-            $res['facilities'] = json_decode($res['facilities'], true);
-        }
+
         if(isset($res['additional_infor'])){
             $res['additional_infor'] = json_decode($res['additional_infor'], true);
         }
         if(isset($res['nearby_areas'])){
             $res['nearby_areas'] = json_decode($res['nearby_areas'], true);
         }
+        if(isset($res['post_sale'])){
+            if(isset($res['post_sale']['facilities'])){
+                $res['post_sale']['facilities'] = json_decode($res['post_sale']['facilities'], true);
+            }
+            if(isset($res['post_sale']['lease_agreement'])){
+                $res['post_sale']['lease_agreement'] = json_decode($res['post_sale']['lease_agreement'], true);
+            }
+        }
+
         return $res;
     }
 

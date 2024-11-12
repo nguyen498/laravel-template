@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('post_sales', function (Blueprint $table) {
-            $table->uuid()->primary('id');
+            $table->uuid('id')->primary('id');
             $table->uuid('post_id')->index();
             $table->enum('type', ['sell', 'buy'])->default('sell');
             $table->string('business_type', 100)->nullable(); // Business type

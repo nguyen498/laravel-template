@@ -35,7 +35,7 @@ class PostIndustryService extends BaseService
     }
     public function checkInputs($inputs, $id)
     {
-        if(!isset($inputs['title'])){
+        if(!isset($inputs['name'])){
             return [
                 'code' => '003',
                 'is_failed' => true,
@@ -46,7 +46,7 @@ class PostIndustryService extends BaseService
             return [
                 'code' => '003',
                 'is_failed' => true,
-                'message' => 'Logo'
+                'message' => 'Sub category'
             ];
         }
         $sub_category = $this->repo_sub_category->findById($inputs['sub_category_id']);

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Traits\UuidTrait;
+use App\Utils\LogHelper;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -92,9 +93,9 @@ class Post extends Model implements Explored, IndexSettings, Aliased
         'store_area' => 'string',
         'medias' => 'json',
         'slug' => 'string',
-        'location' => 'string',
-        'start_date' => 'string',
-        'end_date' => 'string',
+        'location' => 'json',
+        'start_date' => 'datetime',
+        'end_date' => 'datetime',
     ];
 
     protected $searchable = [
@@ -171,6 +172,20 @@ class Post extends Model implements Explored, IndexSettings, Aliased
     public function toSearchableArray()
     {
         // TODO: Implement toSearchableArray() method.
+        $data_filter = [];
+        if(in_array($this->type, [Post::TYPE_TIM_VIEC, Post::TYPE_TUYEN_DUNG])){
+            if(isset($this->postJob)){
+                $data_filter = json_decode(json_encode($this->postJob), true);
+            }
+        }
+        else if(in_array($this->type, [Post::TYPE_SELL, Post::TYPE_BUY])){
+            if(isset($this->postSale)){
+                $data_filter = json_decode(json_encode($this->postSale), true);
+                $data_filter['lease_agreement'] = json_decode($data_filter['lease_agreement'], true);
+                $data_filter['facilities'] = json_decode($data_filter['facilities'], true);
+            }
+        }
+        LogHelper::writeLog("========> asd,asdas". json_encode($data_filter), 1);
         return [
             'id' => $this->id ?? null,
             'reference' => $this->reference ?? null,
@@ -194,35 +209,39 @@ class Post extends Model implements Explored, IndexSettings, Aliased
             'store_area' => $this->store_area ?? null,
             'medias' => isset($this->medias) ? json_decode($this->medias, true) : null, // Chuyển từ JSON string thành mản ?? 'g
             'slug' => $this->slug ?? null,
-            'work_position' => $this->work_position ?? null,
-            'avg_salary' => $this->avg_salary ?? null,
-            'min_salary' => $this->min_salary ?? null,
-            'max_salary' => $this->max_salary ?? null,
-            'type_salary' => $this->type_salary ?? null,
-            'job_type' => $this->job_type ?? null,
-            'job_contract' => $this->job_contract ?? null,
-            'job_time' =>  isset($this->job_time) ? json_decode($this->job_time, true) : null, // Dữ liệu dạng JSON sẽ được lưu thành array
-            'location' =>  isset($this->location) ? json_decode($this->location, true) : null, // Dữ liệu dạng JSON sẽ được lưu thành array
-            'job_experience' => $this->job_experience ?? null,
-            'require_skill' =>  isset($this->require_skill) ? json_decode($this->require_skill, true) : null,
-            'advance_skill' =>  isset($this->advance_skill) ? json_decode($this->advance_skill, true) : null,
-            'job_environmental' => $this->job_environmental ?? null,
-            'business_type' => $this->business_type ?? null,
-            'facebook_name' => $this->facebook_name ?? null,
-            'facebook_url' => $this->facebook_url ?? null,
-            'instagram_name' => $this->instagram_name ?? null,
-            'instagram_url' => $this->instagram_url ?? null,
-            'facilities' => isset($this->facilities) ? json_decode($this->facilities) : null,
-            'num_employees' => $this->num_employees ?? null,
-            'price' => $this->price ?? null,
-            'lease_agreement' => isset($this->lease_agreement) ? json_decode($this->lease_agreement, true) : null, // Đảm bảo lưu dưới dạng array
-            'avg_revenue' => $this->avg_revenue ?? null,
-            'support' => $this->support ?? null,
-            'additional_infor' => isset($this->additional_infor) ? json_decode($this->additional_infor) : null,
-            'deleted_at' => $this->deleted_at ?? null,
-            'created_at' => $this->created_at ?? null,
-            'updated_at' => $this->updated_at ?? null,
-            'nearby_areas' => isset($this->nearby_areas) ? json_decode($this->nearby_areas) : null,
+//            'location' =>  isset($this->location) ? json_decode($this->location, true) : '', // Dữ liệu dạng JSON sẽ được lưu thành array
+            'location' =>  $this->location ?? null, // Dữ liệu dạng JSON sẽ được lưu thành array
+            'data_filter' => $data_filter
+
+
+//            'work_position' => $this->work_position ?? ',
+//            'avg_salary' => $this->avg_salary ?? ',
+//            'min_salary' => $this->min_salary ?? null,
+//            'max_salary' => $this->max_salary ?? null,
+//            'type_salary' => $this->type_salary ?? null,
+//            'job_type' => $this->job_type ?? null,
+//            'job_contract' => $this->job_contract ?? null,
+//            'job_time' =>  isset($this->job_time) ? json_decode($this->job_time, true) : null, // Dữ liệu dạng JSON sẽ được lưu thành array
+//            'job_experience' => $this->job_experience ?? null,
+//            'require_skill' =>  isset($this->require_skill) ? json_decode($this->require_skill, true) : null,
+//            'advance_skill' =>  isset($this->advance_skill) ? json_decode($this->advance_skill, true) : null,
+//            'job_environmental' => $this->job_environmental ?? null,
+//            'business_type' => $this->business_type ?? null,
+//            'facebook_name' => $this->facebook_name ?? null,
+//            'facebook_url' => $this->facebook_url ?? null,
+//            'instagram_name' => $this->instagram_name ?? null,
+//            'instagram_url' => $this->instagram_url ?? null,
+//            'facilities' => isset($this->facilities) ? json_decode($this->facilities) : null,
+//            'num_employees' => $this->num_employees ?? null,
+//            'price' => $this->price ?? null,
+//            'lease_agreement' => isset($this->lease_agreement) ? json_decode($this->lease_agreement, true) : null, // Đảm bảo lưu dưới dạng array
+//            'avg_revenue' => $this->avg_revenue ?? null,
+//            'support' => $this->support ?? null,
+//            'additional_infor' => isset($this->additional_infor) ? json_decode($this->additional_infor) : null,
+//            'deleted_at' => $this->deleted_at ?? null,
+//            'created_at' => $this->created_at ?? null,
+//            'updated_at' => $this->updated_at ?? null,
+//            'nearby_areas' => isset($this->nearby_areas) ? json_decode($this->nearby_areas) : null,
         ];
     }
 
@@ -244,25 +263,30 @@ class Post extends Model implements Explored, IndexSettings, Aliased
             "location" => [
                 'type' => 'geo_point',
             ],
-            "nearby_areas" => [
-                'type' => 'keyword',
-            ],
-            'lease_agreement' => [
-                'type' => 'object',
-                'properties' => [
-                    'money_rent' => ['type' => 'float'],
-                    'lease_remaining' => ['type' => 'integer'],
-                    'more_info' => ['type' => 'text'],
-                ]
-            ],
-            'facilities' => [
-                'type' => 'object',
-                'properties' => [
-                    'num_tables' => ['type' => 'integer'],
-                    'num_chairs' => ['type' => 'integer'],
-                    'num_rooms' => ['type' => 'integer'],
-                    'utilities' => [
-                        'type' => 'keyword'
+            'data_filter' => [
+                "type" => 'object',
+                "properties"=> [
+                    "nearby_areas" => [
+                        'type' => 'keyword',
+                    ],
+                    'lease_agreement' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'money_rent' => ['type' => 'float'],
+                            'lease_remaining' => ['type' => 'integer'],
+                            'more_info' => ['type' => 'text'],
+                        ]
+                    ],
+                    'facilities' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'num_tables' => ['type' => 'integer'],
+                            'num_chairs' => ['type' => 'integer'],
+                            'num_rooms' => ['type' => 'integer'],
+                            'utilities' => [
+                                'type' => 'keyword'
+                            ],
+                        ]
                     ],
                 ]
             ],
