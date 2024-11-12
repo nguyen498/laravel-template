@@ -4,12 +4,13 @@
 namespace App\Models;
 
 
+use App\Traits\UuidTrait;
 use Illuminate\Database\Eloquent\Model;
 use Nicolaslopezj\Searchable\SearchableTrait;
 
 class VisitorDetail extends Model
 {
-    use SearchableTrait;
+    use UuidTrait, SearchableTrait;
 
     protected $table = 'advert_imp_visitor_details';
     protected $primaryKey = 'id';
