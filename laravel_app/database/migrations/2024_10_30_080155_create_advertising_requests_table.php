@@ -14,10 +14,7 @@ return new class extends Migration
         Schema::create('advertising_requests', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->uuid('user_id'); // id người tạo
-            $table->string('user_name', 255)->nullable();; // tên người tạo
-            $table->string('user_phone', 20)->nullable();; // số đt người tạo
             $table->string('post_id', 100); // id bài post
-            $table->string('post_name', 255)->nullable();; // tên bài post
             $table->dateTime('start_date')->nullable();; // ngày bắt đầu quảng cáo
             $table->dateTime('expire_date')->nullable();; // ngày hết hạn
             $table->text('notes')->nullable(); // Ghi chú

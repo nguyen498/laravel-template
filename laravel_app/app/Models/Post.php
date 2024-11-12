@@ -61,58 +61,47 @@ class Post extends Model implements Explored, IndexSettings, Aliased
         'store_area',
         'medias',
         'slug',
-        'work_position',
-        'avg_salary',
-        'min_salary',
-        'max_salary',
-        'type_salary',
-        'job_type',
-        'job_contract',
-        'job_time',
-        'job_experience',
-        'require_skill',
-        'advance_skill',
-        'job_environmental',
-        'business_type',
-        'facebook_name',
-        'facebook_url',
-        'instagram_name',
-        'instagram_url',
-        'facilities',
-        'num_employees',
-        'price',
-        'lease_agreement',
-        'avg_revenue',
-        'support',
-        'additional_infor',
         'location',
-        'num_tables',
-        'num_chairs',
-        'num_rooms'
+        'start_date',
+        'end_date',
     ];
 
     /**
      * Casts for specific attributes.
      */
     protected $casts = [
-        'avg_salary' => 'float',
-        'min_salary' => 'float',
-        'max_salary' => 'float',
-        'price' => 'float',
-        'num_employees' => 'integer',
-        'status' => 'integer',
-        'support' => 'integer',
-        'display_type' => 'integer',
-        'location' => 'json',
-        'lease_agreement' => 'array',
-        // Add other casts as needed
+        'id' => 'string',
+        'reference' => 'string',
+        'category_id' => 'string',
+        'category_name' => 'string',
+        'sub_category_id' => 'string',
+        'sub_category_name' => 'string',
+        'display_type' => 'int',
+        'user_id' => 'string',
+        'type' => 'int',
+        'status' => 'int',
+        'post_industry_id' => 'string',
+        'post_industry_name' => 'string',
+        'title' => 'string',
+        'description' => 'string',
+        'phone_number' => 'string',
+        'email' => 'string',
+        'website' => 'string',
+        'store_name' => 'string',
+        'store_address' => 'string',
+        'store_area' => 'string',
+        'medias' => 'json',
+        'slug' => 'string',
+        'location' => 'string',
+        'start_date' => 'string',
+        'end_date' => 'string',
     ];
 
     protected $searchable = [
         'column' => [
-            'posts.reference' => 10,
-            'posts.title' => 10,
-            'posts.description' => 10
+            'posts.reference' => 80,
+            'posts.title' => 80,
+            'posts.description' => 80
         ]
     ];
 
@@ -156,6 +145,22 @@ class Post extends Model implements Explored, IndexSettings, Aliased
     public function userComments()
     {
         return $this->hasMany(UserComment::class, 'object_id')->where('object_type', 'posts');
+    }
+
+    /**
+     * Relationship to PostSale
+     */
+    public function postSale()
+    {
+        return $this->hasOne(PostSale::class);
+    }
+
+    /**
+     * Relationship to PostJob
+     */
+    public function postJob()
+    {
+        return $this->hasOne(PostJob::class);
     }
 
     public function searchableAs()

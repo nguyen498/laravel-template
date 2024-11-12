@@ -24,10 +24,7 @@ class AdvertisingRequest extends Model
     protected $fillable = [
         'id',
         'user_id',
-        'user_name',
-        'user_phone',
         'post_id',
-        'post_name',
         'start_date',
         'expire_date',
         'notes',
@@ -55,5 +52,9 @@ class AdvertisingRequest extends Model
 
     public function user(){
         return $this->belongsTo(User::class, 'user_id');
+    }
+
+    public function post() {
+        return $this->belongsTo(Post::class, 'post_id');
     }
 }

@@ -41,7 +41,7 @@ class AdvertisingRequestService extends BaseService
         $this->repo_campaign = $repo_campaign;
         $this->repo_banner = $repo_banner;
         $this->repo_zone = $repo_zone;
-        $this->with = [];
+        $this->with = ['user', 'post'];
     }
 
     public function getModelName()
@@ -73,8 +73,6 @@ class AdvertisingRequestService extends BaseService
             return [ 'code' => '005', 'message' => 'Yêu cầu quảng cáo' ];
         }
         $input_data['user_id'] = $user->id;
-        $input_data['user_name'] = $user->name;
-        $input_data['user_phone'] = $user->phone;
 
         $data = $this->repo_base->create($input_data);
         $data = $this->repo_base->findById($data->id, $this->with);
@@ -88,23 +86,23 @@ class AdvertisingRequestService extends BaseService
         if(!isset($inputs['id'])) { return [ 'code' => '003', 'message' => 'Id request' ]; }
         if(!isset($inputs['status'])) { return [ 'code' => '003', 'message' => 'Trạng thái xác nhận' ]; }
 
-        $advertising = $this->repo_base->findById($inputs['id']);
-        if(!isset($advertising)) { return [ 'code' => '004', 'message' => 'Yêu cầu' ]; }
+        $advertising = $this->repo_base->findById($inputs['id'], $this->with);
+        if(!isset($advertising)) { return [ 'code' => '004', 'message' => 'Yêu cầu quảng cáo' ]; }
         if(in_array($advertising->status, [AdvertisingRequest::STATUS_CONFIRM, AdvertisingRequest::STATUS_DESTROY])){
-            return [ 'code' => '008', 'message' => 'Yêu cầu' ];
+            return [ 'code' => '008', 'message' => 'Yêu cầu quảng cáo' ];
         }
 
         $employee = Auth::guard('employees')->user();
         if($inputs['status'] == AdvertisingRequest::STATUS_CONFIRM) {
             // create advertiser
             $advertiser = $this->repo_advertiser->findOneBy([
-                'user_id' => $advertising->user_id
+                'user_id' => $advertising->user->id
             ]);
             if(!isset($advertiser)) {
                 $advertiser = $this->repo_advertiser->create([
-                    'name' => $advertising->user_name,
-                    'phone' => $advertising->phone,
-                    'user_id' => $advertising->user_id,
+                    'name' => $advertising->user->name,
+                    'phone' => $advertising->user->phone,
+                    'user_id' => $advertising->user->id,
                     'status' => Advertiser::STATUS_ACTIVE
                 ]);
             } else {
@@ -120,7 +118,7 @@ class AdvertisingRequestService extends BaseService
             ]);
             if(!isset($campaign)) {
                 $campaign = $this->repo_campaign->create([
-                    'name' => $advertising->user_name,
+                    'name' => $advertising->user->name,
                     'advertiser_id' => $advertiser->id,
                     'starts_at' => Carbon::now()->toDateString(),
                     'weight' => 1,
@@ -177,8 +175,6 @@ class AdvertisingRequestService extends BaseService
         if(!isset($inputs['status'])) {
             $inputs['status'] = AdvertisingRequest::STATUS_NEW;
         }
-
-        $inputs['post_name'] = $post->name;
         return [
             'is_failed' => false,
             'inputs' => $inputs
