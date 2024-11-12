@@ -147,6 +147,7 @@ class AdvertisingRequestService extends BaseService
                 ]);
             }
             // TODO: xu ly zone banner
+            $zone->banners()->sync([$banner->id]);
         }
 //        // update
         $this->repo_base->update($advertising->id, [
