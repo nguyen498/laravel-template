@@ -3,7 +3,9 @@
 namespace App\Repositories;
 
 use App\Models\Impression;
+use App\Models\VisitorDetail;
 use App\Repositories\Interfaces\ImpressionRepositoryInterface;
+use Carbon\Carbon;
 
 class ImpressionRepository extends BaseRepository implements ImpressionRepositoryInterface
 {
