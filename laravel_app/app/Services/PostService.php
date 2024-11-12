@@ -911,6 +911,12 @@ class PostService extends BaseService
                 'post_sale.lease_agreement.lease_remaining' => 'lease_remaining',
                 'post_sale.facilities.num_chairs' => 'num_chairs',
                 'post_sale.facilities.num_tables' => 'num_tables',
+                /// ===============
+                'post_job.job_type' => 'job_type',
+                'post_job.min_salary' => 'min_salary',
+                'post_job.max_salary' => 'max_salary',
+                'post_job.avg_salary' => 'avg_salary',
+                'post_job.job_experience' => 'job_experience',
             ];
 
             // Xử lý các terms
@@ -935,8 +941,8 @@ class PostService extends BaseService
                 'lon' => $location['lng']
             ];
             unset($data['data_search']);
-//            $this->syncFilterElasticsearch($data);
-            dispatch((new SyncFilterElasticsearch($data))->onQueue(QueueMap::QUEUE_SYNC_FILTER_ELASTICSEARCH));
+            $this->syncFilterElasticsearch($data);
+//            dispatch((new SyncFilterElasticsearch($data))->onQueue(QueueMap::QUEUE_SYNC_FILTER_ELASTICSEARCH));
         }
     }
 

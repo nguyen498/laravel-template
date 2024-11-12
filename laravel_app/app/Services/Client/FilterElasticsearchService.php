@@ -84,6 +84,21 @@ class FilterElasticsearchService
                         'price' => [
                             'type' => 'integer_range',
                         ],
+                        'job_type' => [
+                            'type' => 'keyword',
+                        ],
+                        'min_salary' => [
+                            'type' => 'integer_range',
+                        ],
+                        'max_salary' => [
+                            'type' => 'integer_range',
+                        ],
+                        'avg_salary' => [
+                            'type' => 'integer_range',
+                        ],
+                        'job_experience' => [
+                            'type' => 'integer_range',
+                        ],
                     ]
                 ]
             ]
