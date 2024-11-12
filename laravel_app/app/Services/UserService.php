@@ -185,7 +185,7 @@ class UserService extends BaseService
         if (!isset($inputs['password'])) {
             return ['code' => '003', 'message' => 'mật khẩu'];
         }
-        $input_users = ['last_login_at' => Carbon::now()->toDateTimeString()];
+//        $input_users = ['last_login_at' => Carbon::now()->toDateTimeString()];
 
         $user = $this->repo_base->findOneBy([
             'phone' => $inputs['phone'],
@@ -206,10 +206,10 @@ class UserService extends BaseService
             $device_info = isset($inputs['device_info']) ? $inputs['device_info'] : null;
             $this->repo_device->loginBy($inputs['push_token'], $device_info, $user->id, $this->getTableName());
         }
-        if (isset($inputs['name']) && !empty($inputs['name'])) {
-            $input_users['name'] = $inputs['name'];
-        }
-        $user->update($input_users);
+//        if (isset($inputs['name']) && !empty($inputs['name'])) {
+//            $input_users['name'] = $inputs['name'];
+//        }
+//        $user->update($input_users);
         $user = $this->repo_base->findById($user->id, $this->with);
 
         $token = $user->createToken(config('constants.default_app'), ['users'])->accessToken;

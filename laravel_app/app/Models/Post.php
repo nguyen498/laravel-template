@@ -172,20 +172,43 @@ class Post extends Model implements Explored, IndexSettings, Aliased
     public function toSearchableArray()
     {
         // TODO: Implement toSearchableArray() method.
-        $data_filter = [];
+        $post_job = [];
+        $post_sale = [];
         if(in_array($this->type, [Post::TYPE_TIM_VIEC, Post::TYPE_TUYEN_DUNG])){
             if(isset($this->postJob)){
-                $data_filter = json_decode(json_encode($this->postJob), true);
+                $post_job = json_decode(json_encode($this->postJob), true);
+                if(isset($post_job['job_contract'])){
+                    $post_job['job_contract'] = json_decode($post_job['job_contract'], true);
+                }
+                if(isset($post_job['job_time'])){
+                    $post_job['job_time'] = json_decode($post_job['job_time'], true);
+                }
+                if(isset($post_job['require_skill'])){
+                    $post_job['require_skill'] = json_decode($post_job['require_skill'], true);
+                }
+                if(isset($post_job['advance_skill'])){
+                    $post_job['advance_skill'] = json_decode($post_job['advance_skill'], true);
+                }
+                if(isset($post_job['job_environmental'])){
+                    $post_job['job_environmental'] = json_decode($post_job['job_environmental'], true);
+                }
             }
         }
         else if(in_array($this->type, [Post::TYPE_SELL, Post::TYPE_BUY])){
             if(isset($this->postSale)){
-                $data_filter = json_decode(json_encode($this->postSale), true);
-                $data_filter['lease_agreement'] = json_decode($data_filter['lease_agreement'], true);
-                $data_filter['facilities'] = json_decode($data_filter['facilities'], true);
+                $post_sale = json_decode(json_encode($this->postSale), true);
+
+                if(isset($post_sale['nearby_areas'])){
+                    $post_sale['nearby_areas'] = json_decode($post_sale['nearby_areas'], true);
+                }
+                if(isset($post_sale['lease_agreement'])){
+                    $post_sale['lease_agreement'] = json_decode($post_sale['lease_agreement'], true);
+                }
+                if(isset($post_sale['nearby_areas'])){
+                    $post_sale['nearby_areas'] = json_decode($post_sale['facilities'], true);
+                }
             }
         }
-        LogHelper::writeLog("========> asd,asdas". json_encode($data_filter), 1);
         return [
             'id' => $this->id ?? null,
             'reference' => $this->reference ?? null,
@@ -211,7 +234,8 @@ class Post extends Model implements Explored, IndexSettings, Aliased
             'slug' => $this->slug ?? null,
 //            'location' =>  isset($this->location) ? json_decode($this->location, true) : '', // Dữ liệu dạng JSON sẽ được lưu thành array
             'location' =>  $this->location ?? null, // Dữ liệu dạng JSON sẽ được lưu thành array
-            'data_filter' => $data_filter
+            'post_sale' => $post_sale,
+            'post_job' => $post_job
 
 
 //            'work_position' => $this->work_position ?? ',
@@ -263,7 +287,7 @@ class Post extends Model implements Explored, IndexSettings, Aliased
             "location" => [
                 'type' => 'geo_point',
             ],
-            'data_filter' => [
+            'post_sale' => [
                 "type" => 'object',
                 "properties"=> [
                     "nearby_areas" => [
@@ -288,6 +312,21 @@ class Post extends Model implements Explored, IndexSettings, Aliased
                             ],
                         ]
                     ],
+                ]
+            ],
+            'post_job' => [
+                "type" => 'object',
+                "properties"=> [
+                    'work_position' => 'keyword',
+                    'job_type' => 'keyword',
+                    'job_contract' => 'keyword',
+                    'job_time' => 'keyword',
+                    'require_skill' => 'keyword',
+                    'advance_skill' => 'keyword',
+                    'job_environmental' => 'keyword',
+                    'avg_salary' => 'integer',
+                    'min_salary' => 'integer',
+                    'max_salary' => 'integer',
                 ]
             ],
             'created_at' => 'date',

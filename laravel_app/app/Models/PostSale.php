@@ -34,6 +34,7 @@ class PostSale extends Model
         'avg_revenue',
         'support',
         'additional_infor',
+        'nearby_areas'
     ];
 
     protected $casts = [
@@ -51,6 +52,7 @@ class PostSale extends Model
         'avg_revenue' => 'float',
         'support' => 'int',
         'additional_infor' => 'string',
+        'nearby_areas' => 'string'
     ];
 
     protected $searchable = [

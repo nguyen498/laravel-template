@@ -810,18 +810,19 @@ class PostService extends BaseService
             }
         }
 
-        if(isset($res['additional_infor'])){
-            $res['additional_infor'] = json_decode($res['additional_infor'], true);
-        }
-        if(isset($res['nearby_areas'])){
-            $res['nearby_areas'] = json_decode($res['nearby_areas'], true);
-        }
+//        if(isset($res['additional_infor'])){
+//            $res['additional_infor'] = json_decode($res['additional_infor'], true);
+//        }
+
         if(isset($res['post_sale'])){
             if(isset($res['post_sale']['facilities'])){
                 $res['post_sale']['facilities'] = json_decode($res['post_sale']['facilities'], true);
             }
             if(isset($res['post_sale']['lease_agreement'])){
                 $res['post_sale']['lease_agreement'] = json_decode($res['post_sale']['lease_agreement'], true);
+            }
+            if(isset($res['post_sale']['nearby_areas'])){
+                $res['post_sale']['nearby_areas'] = json_decode($res['post_sale']['nearby_areas'], true);
             }
         }
 
@@ -905,11 +906,11 @@ class PostService extends BaseService
             ];
 
             $rangeFields = [
-                'num_employees' => 'num_employees',
-                'avg_revenue' => 'avg_revenue',
-                'lease_agreement.lease_remaining' => 'lease_remaining',
-                'facilities.num_chairs' => 'num_chairs',
-                'facilities.num_tables' => 'num_tables',
+                'post_sale.num_employees' => 'num_employees',
+                'post_sale.avg_revenue' => 'avg_revenue',
+                'post_sale.lease_agreement.lease_remaining' => 'lease_remaining',
+                'post_sale.facilities.num_chairs' => 'num_chairs',
+                'post_sale.facilities.num_tables' => 'num_tables',
             ];
 
             // Xử lý các terms
