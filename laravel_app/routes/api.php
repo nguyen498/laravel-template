@@ -37,6 +37,7 @@ use App\Http\Controllers\Api\PostCmsApiController;
 use App\Http\Controllers\Api\ExportExcelApiController;
 use App\Http\Controllers\Api\CheckStatusApiController;
 use App\Http\Controllers\Api\VisitorDetailApiController;
+use App\Http\Controllers\Api\ZoneApiController;
 
 
 Route::prefix("auth")->group(function () {
@@ -415,6 +416,12 @@ Route::group(['prefix' => 'v1'], function () {
     Route::group(['prefix' => 'visitor_details'], function(){
         Route::group(['middleware' => ['auth:users']], function(){
             Route::post('/setViewClick', [VisitorDetailApiController::class, 'setViewClick']);
+        });
+    });
+
+    Route::group(['prefix' => 'zones'], function(){
+        Route::group(['middleware' => ['auth:users']], function(){
+            Route::post('/getBanners', [ZoneApiController::class, 'getBanners']);
         });
     });
 

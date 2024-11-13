@@ -83,10 +83,11 @@ class VisitorDetailService extends  BaseService
                 $this->repo_impression->update($impression->id, $ins_inputs);
             }
         }
+        $browser = request()->header('User-Agent');
         $impression = $this->repo_impression->findById($impression->id);
         $ins_vit_details = [
             'impression_id' => $impression->id,
-            'user_id' => $user->id
+            'user_id' => $user->id,
         ];
         // create visitor
         $visitor_detail = $this->repo_base->findOneBy($ins_vit_details);
