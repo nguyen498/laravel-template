@@ -221,7 +221,8 @@ class PostService extends BaseService
                 }
                 $datas = $dataPaginate->setCollection(collect($dataArrayMer));
             }
-        } else {
+        }
+        else {
             $dataPaginate = $search->paginate($inputs["limit"]);
             $datas = $dataPaginate;
         }

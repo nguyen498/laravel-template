@@ -24,4 +24,13 @@ class ZoneApiController extends BaseApiController
         }
         return $this->sendResponse($resp['data'], 'Get Banners success');
     }
+
+    public function getBannersV2(Request $request) {
+        $inputs = $request->all();
+        $resp = $this->service_base->getBanners_v2($inputs['data']);
+        if($resp['code'] !== '200'){
+            return $this->sendError($resp['message'], $resp['code']);
+        }
+        return $this->sendResponse($resp['data'], 'Get Banners success');
+    }
 }

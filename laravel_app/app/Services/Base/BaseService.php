@@ -11,14 +11,17 @@ namespace App\Services\Base;
 
 use App\Lib\Models\GeoDistance;
 use App\Lib\Models\MustNot;
+use App\Lib\Models\MustNotTerms;
 use App\Lib\Models\Prefix;
 use App\Lib\Models\QuerySort;
 use App\Lib\Models\RangeDate;
+use App\Lib\Models\SortRandom;
 use App\Lib\Models\TermsSet;
 use App\Lib\Models\Terms;
 use App\Utils\SqlUtil;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
+use JeroenG\Explorer\Domain\Syntax\Compound\BoolQuery;
 use JeroenG\Explorer\Domain\Syntax\MatchAll;
 use JeroenG\Explorer\Domain\Syntax\Matching;
 use JeroenG\Explorer\Domain\Syntax\MatchPhrase;
@@ -498,7 +501,6 @@ abstract class BaseService
     protected function setSearchElastic($inputs) {
         $inputs["limit"] = $inputs["limit"] ?? 1000;
         $inputs["search"] = $inputs["search"] ?? "";
-        $isSelect = $inputs["is_select"] ?? 1;
 
         $search = $this->repo_base->getModel()::search($inputs["search"]);
         // ->take(1000)->get(); đoạn này chỉ để tự phân trang, không hoạt động với paginate
@@ -586,8 +588,11 @@ abstract class BaseService
             $search = $search->property(new QuerySort($sort));
         }
 
+        if (isset($inputs["sort_random"])) {
+            $search = $search->property(new SortRandom());
+        }
+
         if(isset($inputs["must_not"])) {
-            $array = [];
             foreach ($inputs["must_not"] as $item) {
                 $array[] = new Matching($item["field"], $item["value"]);
             }
@@ -595,6 +600,12 @@ abstract class BaseService
             $boolQuery->addMany("must_not", $array);
             $search = $search->newCompound($boolQuery );
         }
+
+        if (isset($inputs["ids"])) {
+            // Thêm điều kiện để loại bỏ các _id trong mảng expect_ids
+            $search = $search->filter(new Terms('_id', $inputs['ids']));
+        }
+
         return $search;
     }
 }

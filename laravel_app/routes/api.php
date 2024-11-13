@@ -422,6 +422,7 @@ Route::group(['prefix' => 'v1'], function () {
     Route::group(['prefix' => 'zones'], function(){
         Route::group(['middleware' => ['auth:users']], function(){
             Route::post('/getBanners', [ZoneApiController::class, 'getBanners']);
+            Route::post('/getBannersV2', [ZoneApiController::class, 'getBannersV2']);
         });
     });
 
