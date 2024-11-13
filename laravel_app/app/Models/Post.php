@@ -65,6 +65,7 @@ class Post extends Model implements Explored, IndexSettings, Aliased
         'location',
         'start_date',
         'end_date',
+        'advert_type'
     ];
 
     /**
@@ -96,6 +97,7 @@ class Post extends Model implements Explored, IndexSettings, Aliased
         'location' => 'json',
         'start_date' => 'datetime',
         'end_date' => 'datetime',
+        'advert_type' => 'string'
     ];
 
     protected $searchable = [
@@ -234,8 +236,9 @@ class Post extends Model implements Explored, IndexSettings, Aliased
             'slug' => $this->slug ?? null,
 //            'location' =>  isset($this->location) ? json_decode($this->location, true) : '', // Dữ liệu dạng JSON sẽ được lưu thành array
             'location' =>  $this->location ?? null, // Dữ liệu dạng JSON sẽ được lưu thành array
+            'advert_type' => isset($this->avert_type) ? json_decode($this->avert_type) : [],
             'post_sale' => $post_sale,
-            'post_job' => $post_job
+            'post_job' => $post_job,
 
 
 //            'work_position' => $this->work_position ?? ',
@@ -330,6 +333,7 @@ class Post extends Model implements Explored, IndexSettings, Aliased
                 ]
             ],
             'created_at' => 'date',
+            'advert_type' => 'keyword',
         ];
     }
 

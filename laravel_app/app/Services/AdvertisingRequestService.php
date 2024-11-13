@@ -153,6 +153,9 @@ class AdvertisingRequestService extends BaseService
         ]);
 
         $advertising = $this->repo_base->findById($advertising->id, $this->with);
+
+        //TODO: xu ly sync elasticsearch
+
         return [
             'code' => '200',
             'data' => $this->formatData($advertising)
