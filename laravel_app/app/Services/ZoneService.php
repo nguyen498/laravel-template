@@ -50,11 +50,7 @@ class ZoneService extends  BaseService
         foreach($exist_banners as $bann) {
             array_push($exist_banner_ids, $bann->id);
         }
-        $banners = $zone->banners()
-            ->whereNotIn('banner_id', $exist_banner_ids)
-            ->orderByRaw('rand()')
-            ->get();
-
+        $banners = $this->repo_base->getBanners($zone, $exist_banner_ids);
 
         return [
             'code' => '200',
