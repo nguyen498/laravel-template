@@ -286,17 +286,16 @@ class PostExcelService
 
                 if(isset($dat['reference']) && isset($map_post[$dat['reference']])) {
                     $dat['id'] = $map_post[$dat['reference']];
-                    if(isset($dat['sale_type']) && !empty($dat['sale_type'])) {
-                        $update_sales = $this->setExtentionInputs($dat, $sale_fillables, $update_sales);
-                    }
 
-                    if(isset($dat['jb_type']) && !empty($dat['jb_type'])) {
-                        $update_jobs = $this->setExtentionInputs($dat, $job_fillables, $update_jobs);
+                    if(in_array($type, [Post::TYPE_SELL, Post::TYPE_BUY])) {
+                        $update_sales = $this->setExtentionInputs($dat, $sale_fillables, $update_sales, $type);
+                    }
+                    if(in_array($type, [Post::TYPE_TIM_VIEC, Post::TYPE_TUYEN_DUNG])){
+                        $update_jobs = $this->setExtentionInputs($dat, $job_fillables, $update_jobs, $type);
                     }
                     // should remove to prevent post can not update or insert
                     $dat = $this->removeByExtention($dat, $sale_fillables);
                     $dat = $this->removeByExtention($dat, $job_fillables);
-                    $dat = $this->removeByExtention($dat, ['sale_type', 'jb_type']);
                     $dat['type'] = $type;
                     $dat['start_date'] = Carbon::now()->toDateTimeString();
                     $update_posts[$map_post[$dat['reference']]] = $dat;
@@ -310,16 +309,15 @@ class PostExcelService
 
                     $dat['id'] = (string) Str::orderedUuid();
                     $dat['reference'] = isset($dat['reference']) ? $dat['reference'] : $this->generateReference($num);
-                    if(isset($dat['sale_type']) && !empty($dat['sale_type'])) {
-                        $insert_sales = $this->setExtentionInputs($dat, $sale_fillables, $insert_sales);
-                    }
 
-                    if(isset($dat['jb_type']) && !empty($dat['jb_type'])) {
-                        $insert_jobs = $this->setExtentionInputs($dat, $job_fillables, $insert_jobs);
+                    if(in_array($type, [Post::TYPE_SELL, Post::TYPE_BUY])) {
+                        $insert_sales = $this->setExtentionInputs($dat, $sale_fillables, $insert_sales, $type);
+                    }
+                    if(in_array($type, [Post::TYPE_TIM_VIEC, Post::TYPE_TUYEN_DUNG])){
+                        $insert_jobs = $this->setExtentionInputs($dat, $job_fillables, $insert_jobs, $type);
                     }
                     $dat = $this->removeByExtention($dat, $sale_fillables);
                     $dat = $this->removeByExtention($dat, $job_fillables);
-                    $dat = $this->removeByExtention($dat, ['sale_type', 'jb_type']);
 
                     $dat['type'] = $type;
                     $dat['start_date'] = Carbon::now()->toDateTimeString();
@@ -349,7 +347,7 @@ class PostExcelService
             if(count($insert_jobs) > 0) {
                 $this->repo_post_job->insertDBs($insert_jobs);
             }
-            $this->processSyncToElastic($insert_posts);
+//            $this->processSyncToElastic($insert_posts);
         }
 
 
@@ -366,7 +364,7 @@ class PostExcelService
                 $this->repo_post_job->insertDBs($update_jobs);
             }
 //            Post::query()->upsert($update_posts, 'reference');
-            $this->processSyncToElastic($update_posts);
+//            $this->processSyncToElastic($update_posts);
         }
 
         return [
@@ -405,16 +403,22 @@ class PostExcelService
         return $dat;
     }
 
-    private function setExtentionInputs($dat, $fillable, $insert) {
+    private function setExtentionInputs($dat, $fillable, $insert, $type) {
+        $now = Carbon::now();
         $inps = [
             'id' => (string) Str::orderedUuid(),
-            'post_id' => $dat['id']
+            'post_id' => $dat['id'],
+            'created_at' => $now->toDateTimeString(),
+            'updated_at' => $now->toDateTimeString(),
         ];
+        switch ($type) {
+            case Post::TYPE_TUYEN_DUNG: $inps['type'] = PostJob::TYPE_RECRUITMENT; break;
+            case Post::TYPE_TIM_VIEC: $inps['type'] = PostJob::TYPE_SEARCH_JOB; break;
+            case Post::TYPE_SELL: $inps['type'] = PostSale::TYPE_SELL; break;
+            case Post::TYPE_BUY: $inps['type'] = PostSale::TYPE_BUY; break;
+        }
         foreach($dat as $key=>$val) {
-            if(($key == 'sale_type' || $key == 'jb_type') && !empty($val)) {
-                $inps['type'] = $val;
-            }
-            if(in_array($key, $fillable)) {
+            if($key != 'type' && in_array($key, $fillable)) {
                 $inps[$key] = $val;
             }
         }

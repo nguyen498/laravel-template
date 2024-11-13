@@ -26,7 +26,7 @@ class PostImport extends ExcelModel
         'latitude' => 'lat',
         'khu_vuc' => 'store_area',
         // post jobs
-        'loai_job' => 'jb_type',
+//        'loai_job' => 'jb_type',
         'vi_tri_lam_viec' => 'work_position',
         'luong_trung_binh' => 'avg_salary',
         'luong_thap_nhat' => 'min_salary',
@@ -40,7 +40,7 @@ class PostImport extends ExcelModel
         'ky_nang_nang_cao' => 'advance_skill',
         'moi_truong_lam_viec' => 'job_environmental',
         // post sale
-        'loai_sale' => 'sale_type',
+//        'loai_sale' => 'sale_type',
         'loai_hinh_kinh_doanh' => 'business_type',
         'ten_facebook' => 'facebook_name',
         'link_facebook' => 'facebook_url',
