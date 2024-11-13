@@ -22,6 +22,7 @@ class BannerRepository extends BaseRepository implements BannerRepositoryInterfa
             ->join('advert_imp_visitor_details','advert_imp_visitor_details.impression_id', '=', 'advert_impressions.id')
             ->where('advert_imp_visitor_details.user_id', $userId)
             ->whereRaw('advert_impressions.created_at >= \''. $now->toDateTimeString() .'\'');
+
         return $query->get(['advert_banners.id', 'advert_banners.post_id']);
     }
 }
