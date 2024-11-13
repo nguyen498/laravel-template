@@ -88,9 +88,9 @@ class AdvertisingRequestService extends BaseService
 
         $advertising = $this->repo_base->findById($inputs['id'], $this->with);
         if(!isset($advertising)) { return [ 'code' => '004', 'message' => 'Yêu cầu quảng cáo' ]; }
-        if(in_array($advertising->status, [AdvertisingRequest::STATUS_CONFIRM, AdvertisingRequest::STATUS_DESTROY])){
-            return [ 'code' => '008', 'message' => 'Yêu cầu quảng cáo' ];
-        }
+//        if(in_array($advertising->status, [AdvertisingRequest::STATUS_CONFIRM, AdvertisingRequest::STATUS_DESTROY])){
+//            return [ 'code' => '008', 'message' => 'Yêu cầu quảng cáo' ];
+//        }
 
         $employee = Auth::guard('employees')->user();
         if($inputs['status'] == AdvertisingRequest::STATUS_CONFIRM) {
@@ -146,6 +146,17 @@ class AdvertisingRequestService extends BaseService
             }
             // TODO: xu ly zone banner
             $zone->banners()->sync([$banner->id]);
+
+            //TODO: xu ly update advert cho bai post
+           $post = $advertising->post;
+           $advert_type = json_decode($post->advert_type) ?? [];
+           if(!in_array($zone->type, $advert_type)){
+               $advert_type[] = $zone->type;
+               $data_post = $this->repo_post->update($post->id, [
+                   'advert_type' => json_encode($advert_type)
+               ]);
+           }
+
         }
         // update
         $this->repo_base->update($advertising->id, [
@@ -153,8 +164,6 @@ class AdvertisingRequestService extends BaseService
         ]);
 
         $advertising = $this->repo_base->findById($advertising->id, $this->with);
-
-        //TODO: xu ly sync elasticsearch
 
         return [
             'code' => '200',

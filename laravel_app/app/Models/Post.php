@@ -206,11 +206,15 @@ class Post extends Model implements Explored, IndexSettings, Aliased
                 if(isset($post_sale['lease_agreement'])){
                     $post_sale['lease_agreement'] = json_decode($post_sale['lease_agreement'], true);
                 }
-                if(isset($post_sale['nearby_areas'])){
-                    $post_sale['nearby_areas'] = json_decode($post_sale['facilities'], true);
+                if(isset($post_sale['facilities'])){
+                    $post_sale['facilities'] = json_decode($post_sale['facilities'], true);
                 }
             }
         }
+
+        LogHelper::writeLog('$post_sale =========>  ' . json_encode($post_sale), 1);
+        LogHelper::writeLog('$post_job =========>  ' . json_encode($post_job), 1);
+        LogHelper::writeLog('$post_job =========>  ' . gettype($this->advert_type), 1);
         return [
             'id' => $this->id ?? null,
             'reference' => $this->reference ?? null,
@@ -236,7 +240,7 @@ class Post extends Model implements Explored, IndexSettings, Aliased
             'slug' => $this->slug ?? null,
 //            'location' =>  isset($this->location) ? json_decode($this->location, true) : '', // Dữ liệu dạng JSON sẽ được lưu thành array
             'location' =>  $this->location ?? null, // Dữ liệu dạng JSON sẽ được lưu thành array
-            'advert_type' => isset($this->avert_type) ? json_decode($this->avert_type) : [],
+            'advert_type' => isset($this->advert_type) ? json_decode($this->advert_type, true) : null,
             'post_sale' => $post_sale,
             'post_job' => $post_job,
 

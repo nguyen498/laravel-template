@@ -15,6 +15,7 @@ use App\Lib\Models\Prefix;
 use App\Lib\Models\QuerySort;
 use App\Lib\Models\RangeDate;
 use App\Lib\Models\TermsSet;
+use App\Lib\Models\Terms;
 use App\Utils\SqlUtil;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
@@ -25,7 +26,7 @@ use JeroenG\Explorer\Domain\Syntax\MultiMatch;
 use JeroenG\Explorer\Domain\Syntax\QueryString;
 use JeroenG\Explorer\Domain\Syntax\Range;
 use JeroenG\Explorer\Domain\Syntax\Term;
-use JeroenG\Explorer\Domain\Syntax\Terms;
+//use JeroenG\Explorer\Domain\Syntax\Terms;
 
 abstract class BaseService
 {

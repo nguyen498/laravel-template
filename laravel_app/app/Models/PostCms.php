@@ -43,6 +43,7 @@ class PostCms extends Model
         'location',
         'start_date',
         'end_date',
+        'advert_type'
     ];
 
     /**

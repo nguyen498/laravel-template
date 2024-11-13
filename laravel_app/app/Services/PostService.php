@@ -5,7 +5,6 @@ namespace App\Services;
 use App\Constants\QueueMap;
 use App\Jobs\CreateKeywordJob;
 use App\Jobs\DeleteKeywordJob;
-use App\Jobs\SyncFilterElasticsearch;
 use App\Models\Post;
 use App\Repositories\Interfaces\PostIndustryRepositoryInterface;
 use App\Repositories\Interfaces\PostJobRepositoryInterface;
@@ -795,6 +794,9 @@ class PostService extends BaseService
         if(isset($res['medias'])){
             $res['medias'] = json_decode($res['medias'], true);
         }
+        if(isset($res['advert_type'])){
+            $res['advert_type'] = json_decode($res['advert_type'], true);
+        }
         if(isset($res['post_job'])){
             if(isset($res['post_job']['job_time'])){
                 $res['post_job']['job_time'] = json_decode($res['post_job']['job_time'], true);
@@ -965,8 +967,12 @@ class PostService extends BaseService
             $data['location'] = json_encode($location, JSON_UNESCAPED_UNICODE);
         }
         $data['data_search'] = json_encode($inputs, JSON_UNESCAPED_UNICODE);
-
-        $this->repo_user_recent_search->create($data);
+        if(isset($data['keyword'])){
+            $recent_search = $this->repo_user_recent_search->findOneBy(['keyword' => $data['keyword']]);
+            if(!isset($recent_search)){
+                $this->repo_user_recent_search->create($data);
+            }
+        }
     }
 
     public function syncFilterElasticsearch($inputs){
