@@ -171,6 +171,15 @@ class AdvertisingRequestService extends BaseService
         ];
     }
 
+    public function searchAdvertStat(){
+
+
+        return [
+            'code' => '200',
+            'data' => []
+        ];
+    }
+
     public function checkInputs($inputs, $id)
     {
         if (isset($inputs['is_app'])) {
