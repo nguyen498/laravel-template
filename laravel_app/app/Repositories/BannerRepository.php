@@ -27,7 +27,7 @@ class BannerRepository extends BaseRepository implements BannerRepositoryInterfa
         return $query->get(['advert_banners.id', 'advert_banners.post_id']);
     }
 
-    public function getStatsAdvertPost($campaignId, $advertiserId)
+    public function getStatsAdvertPost($campaignId, $advertiserId, $searchTitle, $page = 1, $limit = 10)
     {
         $statistics = DB::table('advert_impressions AS ai')
             ->join('advert_banners AS ab', 'ai.banner_id', '=', 'ab.id')
@@ -43,16 +43,35 @@ class BannerRepository extends BaseRepository implements BannerRepositoryInterfa
                 'aa.id AS advertiser_id',
                 'p.id AS post_id',
                 'p.title AS post_title',
+                'p.created_at as created_at',
                 DB::raw('COUNT(ai.id) AS view_count'),
                 DB::raw('SUM(CASE WHEN ai.time_clicked IS NOT NULL THEN 1 ELSE 0 END) AS click_count')
             )
             ->where('ac.id', $campaignId)
-            ->where('aa.id', $advertiserId)
-            ->groupBy('az.id', 'az.name', 'ac.id', 'aa.id', 'p.id', 'p.title')
+            ->where('aa.id', $advertiserId);
+
+        if(isset($searchTitle)){
+            $statistics->when($searchTitle, function ($query, $searchTitle) {
+                $query->where('p.title', 'LIKE', '%' . $searchTitle . '%');
+//                $query->orWhere('az.name', 'LIKE', '%' . $searchTitle . '%');
+                return $query;
+            });
+        }
+//        $data = $statistics->groupBy('az.id', 'az.name', 'ac.id', 'aa.id', 'p.id', 'p.title')
+//            ->orderByDesc('view_count')
+//            ->orderByDesc('click_count')
+//            ->paginate();
+        $statistics->groupBy('az.id','ab.id', 'az.name', 'ac.id', 'aa.id', 'p.id', 'p.title', 'p.created_at')
             ->orderByDesc('view_count')
             ->orderByDesc('click_count')
-            ->get();
+            ->orderByDesc('p.created_at');
+        $total = $statistics->getCountForPagination();
 
-        return $statistics;
+        $statistics->offset(($page - 1) * $limit)->limit($limit);
+        $data = $statistics->get();
+        return [
+            "data" => $data,
+            "total" => $total
+        ];
     }
 }

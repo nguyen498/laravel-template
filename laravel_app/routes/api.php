@@ -140,6 +140,7 @@ Route::group(['prefix' => 'v1'], function () {
 
         Route::group(['middleware' => ['auth.users']], function(){
             Route::post('/storeApp', [AdvertisingRequestApiController::class, 'storeApp']);
+            Route::post('/searchAdvertStat', [AdvertisingRequestApiController::class, 'searchAdvertStat']);
         });
     });
 

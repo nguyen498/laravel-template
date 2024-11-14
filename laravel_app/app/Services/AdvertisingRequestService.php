@@ -171,12 +171,34 @@ class AdvertisingRequestService extends BaseService
         ];
     }
 
-    public function searchAdvertStat(){
+    public function searchAdvertStat($inputs){
 
+        $user = Auth::guard('users')->user();
+
+        $advertiser = $this->repo_advertiser->findOneBy(['user_id' => $user->id]);
+        if(!isset($advertiser)){
+            return [ 'code' => '004', 'message' => 'Advertiser'];
+        }
+        $advertiser_id = $advertiser->id;
+
+        $campaign = $this->repo_campaign->findOneBy(['advertiser_id' => $advertiser_id]);
+        if(!isset($campaign)){
+            return [ 'code' => '004', 'message' => 'Advertiser'];
+        }
+        $campaign_id = $campaign->id;
+
+        $text = null;
+        if(isset($inputs['search']) && $inputs['search'] !== ''){
+            $text = $inputs['search'];
+        }
+        $page = $inputs['page'] ?? 1;
+        $limit = $inputs['limit'] ?? 10;
+
+        $data = $this->repo_banner->getStatsAdvertPost($campaign_id, $advertiser_id, $text, $page, $limit);
 
         return [
             'code' => '200',
-            'data' => []
+            'data' => $data
         ];
     }
 
